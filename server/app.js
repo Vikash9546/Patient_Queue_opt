@@ -31,6 +31,7 @@ app.use('/api/queue', authMiddleware, activityLogger, require('./routes/queue'))
 app.use('/api/analytics', authMiddleware, activityLogger, require('./routes/analytics'));
 app.use('/api/ai', authMiddleware, activityLogger, require('./routes/ai'));
 app.use('/api/demo', authMiddleware, activityLogger, require('./routes/demo'));
+app.use('/api/activity', authMiddleware, require('./routes/activity'));
 
 // Health check
 app.get('/api/health', (req, res) => {
