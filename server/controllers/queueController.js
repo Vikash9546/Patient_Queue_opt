@@ -189,6 +189,17 @@ exports.callNext = async (req, res) => {
         if (global.broadcast) {
             const queueData = await queueService.getQueue(doctor_id);
             global.broadcast({ type: 'queue_update', data: queueData });
+            if (next) {
+                // Get patient name for the notification
+                const patient = await Patient.findById(next.patient_id);
+                global.broadcast({
+                    type: 'patient_called', data: {
+                        patient_name: patient?.name || 'Unknown',
+                        doctor_id,
+                        queue_entry: next
+                    }
+                });
+            }
         }
 
         if (next) {

@@ -111,6 +111,12 @@ exports.updateStatus = async (req, res) => {
         const { status } = req.body;
         await Doctor.findByIdAndUpdate(req.params.id, { status });
         const doctor = await Doctor.findById(req.params.id);
+
+        // Broadcast doctor status change to all clients
+        if (global.broadcast) {
+            global.broadcast({ type: 'doctor_status', data: { doctor_id: req.params.id, status, doctor_name: doctor.name } });
+        }
+
         res.json({ success: true, data: { ...doctor.toObject(), id: doctor._id } });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
