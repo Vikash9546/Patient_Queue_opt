@@ -8,6 +8,7 @@ const queueEntrySchema = new mongoose.Schema({
     position: { type: Number, required: true }, // 1 = next
     status: { type: String, enum: ['waiting', 'in_consultation', 'completed', 'skipped'], default: 'waiting' },
     priority: { type: String, enum: ['emergency', 'high', 'normal', 'low'], default: 'normal' },
+    priority_score: { type: Number, default: 0 },
     estimated_wait_mins: { type: Number, default: 0 }, // Dynamic
     checked_in_at: { type: Date, default: Date.now },
     called_at: { type: Date, default: null },

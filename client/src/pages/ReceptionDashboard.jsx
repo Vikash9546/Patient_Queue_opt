@@ -18,7 +18,7 @@ export default function ReceptionDashboard() {
     const [chatMessages, setChatMessages] = useState([{ role: 'bot', text: 'Hello! I\'m MediQueue AI assistant. How can I help you today? 😊' }]);
     const [chatInput, setChatInput] = useState('');
     const [urgencyMode, setUrgencyMode] = useState('ai');
-    const [walkInForm, setWalkInForm] = useState({ patient_name: '', patient_age: '', symptoms: '', doctor_id: '', patient_phone: '', manual_urgency: 'normal' });
+    const [walkInForm, setWalkInForm] = useState({ patient_name: '', patient_age: '', symptoms: '', doctor_id: '', patient_phone: '', manual_urgency: 'normal', visit_type: 'routine', pain_level: 1 });
     const [bookingForm, setBookingForm] = useState({ patient_name: '', patient_age: '', patient_phone: '', doctor_id: '', symptoms: '', scheduled_time: '', urgency_level: 'low' });
     const [simulating, setSimulating] = useState(false);
     const [triageResult, setTriageResult] = useState(null);
@@ -57,7 +57,7 @@ export default function ReceptionDashboard() {
             const res = await api.addWalkIn(payload);
             setTriageResult(res.data.triage);
             setShowWalkIn(false);
-            setWalkInForm({ patient_name: '', patient_age: '', symptoms: '', doctor_id: '', patient_phone: '', manual_urgency: 'normal' });
+            setWalkInForm({ patient_name: '', patient_age: '', symptoms: '', doctor_id: '', patient_phone: '', manual_urgency: 'normal', visit_type: 'routine', pain_level: 1 });
             setUrgencyMode('ai');
             fetchQueue(); loadAppointments(); loadStats();
         } catch (e) { alert(e.message); }
@@ -68,7 +68,7 @@ export default function ReceptionDashboard() {
         try {
             await api.addEmergency(walkInForm);
             setShowEmergency(false);
-            setWalkInForm({ patient_name: '', patient_age: '', symptoms: '', doctor_id: '', patient_phone: '', manual_urgency: 'normal' });
+            setWalkInForm({ patient_name: '', patient_age: '', symptoms: '', doctor_id: '', patient_phone: '', manual_urgency: 'normal', visit_type: 'routine', pain_level: 1 });
             setUrgencyMode('ai');
             fetchQueue(); loadAppointments(); loadStats();
         } catch (e) { alert(e.message); }
@@ -513,6 +513,26 @@ export default function ReceptionDashboard() {
                             <textarea placeholder="Symptoms (e.g., Fever, Headache, Chest Pain)" required value={walkInForm.symptoms}
                                 onChange={e => setWalkInForm({ ...walkInForm, symptoms: e.target.value })}
                                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 placeholder-slate-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 h-24 resize-none" />
+
+                            {!showEmergency && (
+                                <div className="grid grid-cols-2 gap-3">
+                                    <select value={walkInForm.visit_type} onChange={e => setWalkInForm({ ...walkInForm, visit_type: e.target.value })}
+                                        className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
+                                        <option value="routine">Routine</option>
+                                        <option value="follow-up">Follow-up</option>
+                                        <option value="emergency">Emergency</option>
+                                    </select>
+                                    <div className="flex flex-col justify-center px-4 py-1 bg-slate-50 border border-slate-200 rounded-xl focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-400">
+                                        <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1 flex justify-between">
+                                            <span>Pain Level: {walkInForm.pain_level}</span>
+                                            <span>(1-5)</span>
+                                        </label>
+                                        <input type="range" min="1" max="5" value={walkInForm.pain_level}
+                                            onChange={e => setWalkInForm({ ...walkInForm, pain_level: parseInt(e.target.value) })}
+                                            className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#0ea5e9]" />
+                                    </div>
+                                </div>
+                            )}
 
                             {!showEmergency && (
                                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">

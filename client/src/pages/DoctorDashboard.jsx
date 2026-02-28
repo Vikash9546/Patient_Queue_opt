@@ -182,7 +182,7 @@ export default function DoctorDashboard() {
                                             )}
                                         </div>
                                         <p className="font-semibold text-[#1e293b] text-[13px] leading-tight">
-                                            #{entry.position} - {entry.patient_name}
+                                            #{entry.position} - {entry.patient_name} <span className="text-xs text-slate-400 font-normal ml-1">(Score: {Math.round(entry.priority_score || 0)})</span>
                                         </p>
                                         <p className="text-[11px] text-slate-400 mt-0.5">
                                             {isWalkIn ? `Walk-In (Wait: ${entry.estimated_wait_mins}m)` : `Appt: ${formatTime(entry.scheduled_time)}`}

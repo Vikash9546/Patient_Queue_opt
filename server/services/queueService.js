@@ -30,6 +30,8 @@ async function getQueue(doctorId) {
             doctor_specialty: doctor ? doctor.specialty : '',
             symptoms: appointment ? appointment.symptoms : '',
             urgency_level: appointment ? appointment.urgency_level : 'low',
+            visit_type: appointment ? appointment.visit_type : 'routine',
+            pain_level: appointment ? appointment.pain_level : 1,
             estimated_duration: appointment ? appointment.estimated_duration : 15,
             scheduled_time: appointment ? appointment.scheduled_time : null
         };
@@ -143,20 +145,50 @@ async function reorderQueue(doctorId, newOrder) {
     await recalculateWaitTimes(doctorId);
 }
 
+function calculatePriorityScore(q) {
+    let score = 0;
+
+    // Emergency = +50
+    if (q.visit_type === 'emergency' || q.priority === 'emergency') score += 50;
+
+    // Pain level mapping
+    const pain = q.pain_level || 1;
+    score += pain * 10;
+
+    // Age factor
+    if (q.patient_age > 60) score += 10;
+
+    // Waiting time factor (1 point per minute waiting)
+    const checkedInAt = q.checked_in_at ? new Date(q.checked_in_at) : new Date();
+    const waitMins = Math.max(0, Math.floor((new Date() - checkedInAt) / 60000));
+    score += waitMins;
+
+    return score;
+}
+
 async function rebalanceQueue(doctorId) {
     const queue = await getQueue(doctorId);
     const waiting = queue.filter(q => q.status === 'waiting');
 
-    // Sort by priority then by original position
-    const priorityOrder = { emergency: 0, high: 1, normal: 2, low: 3 };
+    // Calculate priority scores for all waiting patients
+    for (let q of waiting) {
+        q.priority_score = calculatePriorityScore(q);
+    }
+
+    // Sort by priority_score descending (Max Heap simulation)
+    // If scores identical, sort by original position (FIFO)
     waiting.sort((a, b) => {
-        const priDiff = (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3);
-        if (priDiff !== 0) return priDiff;
+        if (b.priority_score !== a.priority_score) {
+            return b.priority_score - a.priority_score;
+        }
         return a.position - b.position;
     });
 
     for (let i = 0; i < waiting.length; i++) {
-        await QueueEntry.findByIdAndUpdate(waiting[i]._id || waiting[i].id, { position: i + 1 });
+        await QueueEntry.findByIdAndUpdate(waiting[i]._id || waiting[i].id, {
+            position: i + 1,
+            priority_score: waiting[i].priority_score
+        });
     }
 
     await recalculateWaitTimes(doctorId);

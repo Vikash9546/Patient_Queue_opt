@@ -19,7 +19,7 @@ exports.getQueue = async (req, res) => {
 
 exports.addWalkIn = async (req, res) => {
     try {
-        const { patient_name, patient_age, patient_phone, symptoms, doctor_id, medical_history, manual_urgency } = req.body;
+        const { patient_name, patient_age, patient_phone, symptoms, doctor_id, medical_history, manual_urgency, visit_type, pain_level } = req.body;
 
         let triageResult = {};
 
@@ -64,6 +64,8 @@ exports.addWalkIn = async (req, res) => {
             status: 'checked_in',
             urgency_level: triageResult.urgency,
             symptoms: symptoms || '',
+            visit_type: visit_type || 'routine',
+            pain_level: pain_level ? parseInt(pain_level) : 1,
             is_walkin: 1
         });
 
@@ -130,6 +132,8 @@ exports.addEmergency = async (req, res) => {
             status: 'checked_in',
             urgency_level: 'emergency',
             symptoms: symptoms || 'Emergency',
+            visit_type: 'emergency',
+            pain_level: 5,
             is_walkin: 1
         });
 

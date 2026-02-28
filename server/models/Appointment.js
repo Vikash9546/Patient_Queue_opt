@@ -13,6 +13,8 @@ const appointmentSchema = new mongoose.Schema({
     no_show_score: { type: Number, min: 0.0, max: 1.0, default: 0.0 }, // 0.0-1.0
     actual_start: { type: Date, default: null },
     actual_end: { type: Date, default: null },
+    visit_type: { type: String, enum: ['emergency', 'follow-up', 'routine'], default: 'routine' },
+    pain_level: { type: Number, min: 1, max: 5, default: 1 },
     // Keep is_walkin for existing app logic
     is_walkin: { type: Number, default: 0 },
     created_at: { type: Date, default: Date.now }

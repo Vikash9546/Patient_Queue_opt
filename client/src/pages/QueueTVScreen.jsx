@@ -83,7 +83,7 @@ export default function QueueTVScreen() {
                                 )}
                                 {nextP.map((entry, idx) => (
                                     <div key={entry.id || entry._id} className={`flex items-center gap-4 p-3 rounded-xl transition-all duration-500 ${entry.priority === 'emergency' ? 'bg-red-500/10 border border-red-500/20' :
-                                            'bg-slate-700/30 border border-slate-600/20'
+                                        'bg-slate-700/30 border border-slate-600/20'
                                         }`} style={{ animation: `slideIn 0.5s ease-out ${idx * 100}ms both` }}>
                                         <span className="text-2xl font-bold text-slate-500 w-10 text-center">{entry.position}</span>
                                         <div className="flex-1 min-w-0">
@@ -91,11 +91,11 @@ export default function QueueTVScreen() {
                                             <p className="text-xs text-slate-400 truncate">{entry.symptoms || 'Walk-in'}</p>
                                         </div>
                                         <div className="text-right flex-shrink-0">
-                                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase ${entry.priority === 'emergency' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-                                                    entry.priority === 'high' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
-                                                        entry.priority === 'medium' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
-                                                            'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                                }`}>{entry.priority}</span>
+                                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase flex items-center gap-1 w-max ml-auto ${entry.priority === 'emergency' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                                                entry.priority === 'high' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                                                    entry.priority === 'medium' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                                                        'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                                }`}>{entry.priority} <span className="opacity-60 text-[10px]">⭐ {Math.round(entry.priority_score || 0)}</span></span>
                                             <p className="text-xs text-slate-500 mt-1">{entry.estimated_wait_mins}m wait</p>
                                         </div>
                                     </div>
