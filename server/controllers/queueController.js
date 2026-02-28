@@ -67,13 +67,27 @@ exports.addWalkIn = async (req, res) => {
             is_walkin: 1
         });
 
-        // Add to queue with priority
-        const priority = triageResult.urgency === 'emergency' ? 'emergency' :
-            triageResult.urgency === 'high' ? 'high' : 'normal';
+        // Map Urgency strictly mapped to flowchart logic: 
+        // high/medium -> Priority Insert (Mapped to 'high' priority)
+        // low -> Add to Queue End (Mapped to 'low' priority)
+        // emergency -> Jump Queue (Mapped to 'emergency' priority)
+        let priority = 'low';
+        if (triageResult.urgency === 'emergency') priority = 'emergency';
+        else if (triageResult.urgency === 'high' || triageResult.urgency === 'medium') priority = 'high';
 
         const queueEntry = await queueService.addToQueue({
             appointmentId, patientId, doctorId: doctor_id, priority
         });
+
+        if (priority === 'emergency') {
+            await notificationService.notifyEmergency(doctor_id, patient_name);
+            if (global.broadcast) {
+                global.broadcast({ type: 'emergency', data: { patient_name, doctor_id } });
+            }
+        }
+
+        // Auto-Rebalance Queue per flowchart
+        await queueService.rebalanceQueue(doctor_id);
 
         // Broadcast update
         if (global.broadcast) {
@@ -230,12 +244,19 @@ exports.checkIn = async (req, res) => {
 
         const appt = await Appointment.findById(appointment_id);
         if (appt) {
+            let priority = 'low';
+            if (appt.urgency_level === 'emergency') priority = 'emergency';
+            else if (appt.urgency_level === 'high' || appt.urgency_level === 'medium') priority = 'high';
+
             const queueEntry = await queueService.addToQueue({
                 appointmentId: appointment_id,
                 patientId: appt.patient_id,
                 doctorId: appt.doctor_id,
-                priority: appt.urgency_level === 'high' ? 'high' : 'normal'
+                priority
             });
+
+            // Auto-Rebalance Queue per flowchart
+            await queueService.rebalanceQueue(appt.doctor_id);
 
             if (global.broadcast) {
                 const queueData = await queueService.getQueue(appt.doctor_id);

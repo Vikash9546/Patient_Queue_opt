@@ -40,21 +40,21 @@ async function getQueue(doctorId) {
 
 async function addToQueue({ appointmentId, patientId, doctorId, priority }) {
     const currentQueue = await getQueue(doctorId);
-    const waitingCount = currentQueue.filter(q => q.status === 'waiting').length;
+    const waitingQueue = currentQueue.filter(q => q.status === 'waiting');
+    const waitingCount = waitingQueue.length;
 
     let position;
     if (priority === 'emergency') {
-        // Insert after current consultation
+        // Insert at the front of the waiting queue
         position = 1;
-        // Shift everyone else down
         await QueueEntry.updateMany(
             { doctor_id: doctorId, status: 'waiting' },
             { $inc: { position: 1 } }
         );
     } else if (priority === 'high') {
-        // Insert after emergencies and current high priority
-        const highPriorityCount = currentQueue.filter(q => q.priority === 'emergency' || q.priority === 'high').length;
-        position = Math.max(highPriorityCount, 1);
+        // Insert after existing emergencies and high priorities
+        const highPriorityCount = waitingQueue.filter(q => q.priority === 'emergency' || q.priority === 'high').length;
+        position = highPriorityCount + 1;
         await QueueEntry.updateMany(
             { doctor_id: doctorId, status: 'waiting', position: { $gte: position } },
             { $inc: { position: 1 } }
@@ -148,9 +148,9 @@ async function rebalanceQueue(doctorId) {
     const waiting = queue.filter(q => q.status === 'waiting');
 
     // Sort by priority then by original position
-    const priorityOrder = { emergency: 0, high: 1, normal: 2 };
+    const priorityOrder = { emergency: 0, high: 1, normal: 2, low: 3 };
     waiting.sort((a, b) => {
-        const priDiff = (priorityOrder[a.priority] || 2) - (priorityOrder[b.priority] || 2);
+        const priDiff = (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3);
         if (priDiff !== 0) return priDiff;
         return a.position - b.position;
     });
