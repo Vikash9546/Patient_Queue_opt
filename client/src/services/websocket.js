@@ -4,9 +4,11 @@ class WebSocketService {
         this.listeners = new Map();
         this.reconnectInterval = 3000;
         this.isConnected = false;
+        this.intentionalClose = false;
     }
 
     connect() {
+        this.intentionalClose = false;
         const wsUrl = `ws://${window.location.hostname}:5050`;
         this.ws = new WebSocket(wsUrl);
 
@@ -27,13 +29,18 @@ class WebSocketService {
 
         this.ws.onclose = () => {
             this.isConnected = false;
-            console.log('🔌 WebSocket disconnected, reconnecting...');
-            this.emit('connection', { connected: false });
-            setTimeout(() => this.connect(), this.reconnectInterval);
+            if (!this.intentionalClose) {
+                console.log('🔌 WebSocket disconnected, reconnecting...');
+                this.emit('connection', { connected: false });
+                setTimeout(() => this.connect(), this.reconnectInterval);
+            }
         };
 
-        this.ws.onerror = (error) => {
-            console.error('WebSocket error:', error);
+        this.ws.onerror = () => {
+            // Suppress noisy error logs during intentional closes
+            if (!this.intentionalClose) {
+                console.warn('🔌 WebSocket connection error');
+            }
         };
     }
 
@@ -61,6 +68,7 @@ class WebSocketService {
     }
 
     disconnect() {
+        this.intentionalClose = true;
         if (this.ws) this.ws.close();
     }
 }
