@@ -167,7 +167,6 @@ export default function ReceptionDashboard() {
                             { key: 'dashboard', label: 'Dashboard' },
                             { key: 'livequeue', label: 'Live Queue', onClick: () => navigate('/doctor') },
                             { key: 'history', label: 'Patient History', onClick: () => navigate('/patient-history') },
-                            { key: 'schedules', label: 'Schedules' },
                             { key: 'analytics', label: 'Analytics', onClick: () => navigate('/analytics') },
                         ].map(tab => (
                             <button key={tab.key} onClick={tab.onClick || (() => setActiveTab(tab.key))}

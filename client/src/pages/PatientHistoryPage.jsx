@@ -112,7 +112,6 @@ export default function PatientHistoryPage() {
                         <nav className="flex items-center gap-1 text-[13px]">
                             <button onClick={() => navigate('/doctor')} className="px-3 py-1.5 font-medium text-slate-500 hover:text-slate-700 transition-colors">Live Queue</button>
                             <button className="px-3 py-1.5 font-semibold text-[#0ea5e9] border-b-2 border-[#0ea5e9]">Patient History</button>
-                            <button onClick={() => navigate('/reception')} className="px-3 py-1.5 font-medium text-slate-500 hover:text-slate-700 transition-colors">Schedules</button>
                             <button onClick={() => navigate('/analytics')} className="px-3 py-1.5 font-medium text-slate-500 hover:text-slate-700 transition-colors">Analytics</button>
                         </nav>
                     </div>
