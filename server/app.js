@@ -15,9 +15,6 @@ const server = http.createServer(app);
 app.use(cors());
 app.use(express.json());
 
-// Initialize Database
-initializeDatabase();
-
 // Initialize AI
 initAI();
 
@@ -36,19 +33,32 @@ app.use('/api/demo', authMiddleware, require('./routes/demo'));
 
 // Health check
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', name: 'MediQueue AI Server', version: '1.0.0' });
+  res.json({ status: 'ok', name: 'MediQueue AI Server', version: '1.0.0' });
 });
 
 // Error handler
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-    console.log(`
+
+// Start server after connecting to MongoDB
+async function startServer() {
+  try {
+    await initializeDatabase();
+    server.listen(PORT, () => {
+      console.log(`
   🏥 ═══════════════════════════════════════════
   ║   MediQueue AI Server Running!             ║
   ║   REST API: http://localhost:${PORT}          ║
   ║   WebSocket: ws://localhost:${PORT}           ║
+  ║   Database: MongoDB                        ║
   ═══════════════════════════════════════════════
   `);
-});
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error.message);
+    process.exit(1);
+  }
+}
+
+startServer();

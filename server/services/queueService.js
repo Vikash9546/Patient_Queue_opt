@@ -1,27 +1,45 @@
-const { db } = require('../config/database');
+const QueueEntry = require('../models/QueueEntry');
+const Patient = require('../models/Patient');
+const Doctor = require('../models/Doctor');
+const Appointment = require('../models/Appointment');
 const { generateId } = require('../utils/helpers');
 
-function getQueue(doctorId) {
-    let query = `SELECT q.*, p.name as patient_name, p.age as patient_age, p.phone as patient_phone,
-    a.symptoms, a.urgency_level, a.estimated_duration, a.scheduled_time,
-    d.name as doctor_name, d.specialty as doctor_specialty
-    FROM queue_entries q
-    JOIN patients p ON q.patient_id = p.id
-    JOIN doctors d ON q.doctor_id = d.id
-    LEFT JOIN appointments a ON q.appointment_id = a.id
-    WHERE q.status IN ('waiting', 'in_consultation')`;
+async function getQueue(doctorId) {
+    const filter = { status: { $in: ['waiting', 'in_consultation'] } };
+    if (doctorId) filter.doctor_id = doctorId;
 
-    if (doctorId) {
-        query += ` AND q.doctor_id = ?`;
-        query += ` ORDER BY q.position ASC`;
-        return db.prepare(query).all(doctorId);
-    }
-    query += ` ORDER BY q.doctor_id, q.position ASC`;
-    return db.prepare(query).all();
+    const sortOrder = doctorId
+        ? { position: 1 }
+        : { doctor_id: 1, position: 1 };
+
+    const entries = await QueueEntry.find(filter).sort(sortOrder);
+
+    // Populate related data
+    const populatedEntries = await Promise.all(entries.map(async (q) => {
+        const patient = await Patient.findById(q.patient_id);
+        const doctor = await Doctor.findById(q.doctor_id);
+        const appointment = q.appointment_id ? await Appointment.findById(q.appointment_id) : null;
+
+        return {
+            ...q.toObject(),
+            id: q._id,
+            patient_name: patient ? patient.name : 'Unknown',
+            patient_age: patient ? patient.age : null,
+            patient_phone: patient ? patient.phone : null,
+            doctor_name: doctor ? doctor.name : 'Unknown',
+            doctor_specialty: doctor ? doctor.specialty : '',
+            symptoms: appointment ? appointment.symptoms : '',
+            urgency_level: appointment ? appointment.urgency_level : 'low',
+            estimated_duration: appointment ? appointment.estimated_duration : 15,
+            scheduled_time: appointment ? appointment.scheduled_time : null
+        };
+    }));
+
+    return populatedEntries;
 }
 
-function addToQueue({ appointmentId, patientId, doctorId, priority }) {
-    const currentQueue = getQueue(doctorId);
+async function addToQueue({ appointmentId, patientId, doctorId, priority }) {
+    const currentQueue = await getQueue(doctorId);
     const waitingCount = currentQueue.filter(q => q.status === 'waiting').length;
 
     let position;
@@ -29,74 +47,104 @@ function addToQueue({ appointmentId, patientId, doctorId, priority }) {
         // Insert after current consultation
         position = 1;
         // Shift everyone else down
-        db.prepare(`UPDATE queue_entries SET position = position + 1 WHERE doctor_id = ? AND status = 'waiting'`).run(doctorId);
+        await QueueEntry.updateMany(
+            { doctor_id: doctorId, status: 'waiting' },
+            { $inc: { position: 1 } }
+        );
     } else if (priority === 'high') {
         // Insert after emergencies and current high priority
         const highPriorityCount = currentQueue.filter(q => q.priority === 'emergency' || q.priority === 'high').length;
         position = Math.max(highPriorityCount, 1);
-        db.prepare(`UPDATE queue_entries SET position = position + 1 WHERE doctor_id = ? AND status = 'waiting' AND position >= ?`).run(doctorId, position);
+        await QueueEntry.updateMany(
+            { doctor_id: doctorId, status: 'waiting', position: { $gte: position } },
+            { $inc: { position: 1 } }
+        );
     } else {
         position = waitingCount + 1;
     }
 
     // Calculate estimated wait
-    const estimatedWait = calculateWaitTime(doctorId, position);
+    const estimatedWait = await calculateWaitTime(doctorId, position);
 
     const id = generateId();
-    db.prepare(`INSERT INTO queue_entries (id, appointment_id, patient_id, doctor_id, position, status, priority, estimated_wait_mins)
-    VALUES (?, ?, ?, ?, ?, 'waiting', ?, ?)`).run(id, appointmentId, patientId, doctorId, position, priority || 'normal', estimatedWait);
+    await QueueEntry.create({
+        _id: id,
+        appointment_id: appointmentId,
+        patient_id: patientId,
+        doctor_id: doctorId,
+        position,
+        status: 'waiting',
+        priority: priority || 'normal',
+        estimated_wait_mins: estimatedWait
+    });
 
     return { id, position, estimated_wait_mins: estimatedWait };
 }
 
-function removeFromQueue(queueId) {
-    const entry = db.prepare('SELECT * FROM queue_entries WHERE id = ?').get(queueId);
+async function removeFromQueue(queueId) {
+    const entry = await QueueEntry.findById(queueId);
     if (!entry) return null;
 
-    db.prepare(`UPDATE queue_entries SET status = 'completed', completed_at = datetime('now') WHERE id = ?`).run(queueId);
+    await QueueEntry.findByIdAndUpdate(queueId, {
+        status: 'completed',
+        completed_at: new Date()
+    });
 
     // Shift positions
-    db.prepare(`UPDATE queue_entries SET position = position - 1 WHERE doctor_id = ? AND position > ? AND status = 'waiting'`)
-        .run(entry.doctor_id, entry.position);
+    await QueueEntry.updateMany(
+        { doctor_id: entry.doctor_id, position: { $gt: entry.position }, status: 'waiting' },
+        { $inc: { position: -1 } }
+    );
 
-    recalculateWaitTimes(entry.doctor_id);
+    await recalculateWaitTimes(entry.doctor_id);
     return entry;
 }
 
-function moveToNext(doctorId) {
+async function moveToNext(doctorId) {
     // Complete current consultation
-    const current = db.prepare(`SELECT * FROM queue_entries WHERE doctor_id = ? AND status = 'in_consultation'`).get(doctorId);
+    const current = await QueueEntry.findOne({ doctor_id: doctorId, status: 'in_consultation' });
     if (current) {
-        db.prepare(`UPDATE queue_entries SET status = 'completed', completed_at = datetime('now') WHERE id = ?`).run(current.id);
-        db.prepare(`UPDATE appointments SET status = 'completed', actual_end = datetime('now') WHERE id = ?`).run(current.appointment_id);
+        await QueueEntry.findByIdAndUpdate(current._id, {
+            status: 'completed',
+            completed_at: new Date()
+        });
+        await Appointment.findByIdAndUpdate(current.appointment_id, {
+            status: 'completed',
+            actual_end: new Date()
+        });
     }
 
     // Call next patient
-    const next = db.prepare(`SELECT * FROM queue_entries WHERE doctor_id = ? AND status = 'waiting' ORDER BY position ASC LIMIT 1`).get(doctorId);
+    const next = await QueueEntry.findOne({ doctor_id: doctorId, status: 'waiting' }).sort({ position: 1 });
     if (next) {
-        db.prepare(`UPDATE queue_entries SET status = 'in_consultation', called_at = datetime('now') WHERE id = ?`).run(next.id);
-        db.prepare(`UPDATE appointments SET status = 'in_progress', actual_start = datetime('now') WHERE id = ?`).run(next.appointment_id);
+        await QueueEntry.findByIdAndUpdate(next._id, {
+            status: 'in_consultation',
+            called_at: new Date()
+        });
+        await Appointment.findByIdAndUpdate(next.appointment_id, {
+            status: 'in_progress',
+            actual_start: new Date()
+        });
         // Shift positions
-        db.prepare(`UPDATE queue_entries SET position = position - 1 WHERE doctor_id = ? AND status = 'waiting'`).run(doctorId);
-        recalculateWaitTimes(doctorId);
+        await QueueEntry.updateMany(
+            { doctor_id: doctorId, status: 'waiting' },
+            { $inc: { position: -1 } }
+        );
+        await recalculateWaitTimes(doctorId);
         return next;
     }
     return null;
 }
 
-function reorderQueue(doctorId, newOrder) {
-    const updateStmt = db.prepare('UPDATE queue_entries SET position = ? WHERE id = ?');
-    const transaction = db.transaction((order) => {
-        order.forEach((id, index) => {
-            updateStmt.run(index + 1, id);
-        });
-    });
-    transaction(newOrder);
-    recalculateWaitTimes(doctorId);
+async function reorderQueue(doctorId, newOrder) {
+    for (let i = 0; i < newOrder.length; i++) {
+        await QueueEntry.findByIdAndUpdate(newOrder[i], { position: i + 1 });
+    }
+    await recalculateWaitTimes(doctorId);
 }
 
-function rebalanceQueue(doctorId) {
-    const queue = getQueue(doctorId);
+async function rebalanceQueue(doctorId) {
+    const queue = await getQueue(doctorId);
     const waiting = queue.filter(q => q.status === 'waiting');
 
     // Sort by priority then by original position
@@ -107,21 +155,20 @@ function rebalanceQueue(doctorId) {
         return a.position - b.position;
     });
 
-    const updateStmt = db.prepare('UPDATE queue_entries SET position = ? WHERE id = ?');
-    waiting.forEach((entry, index) => {
-        updateStmt.run(index + 1, entry.id);
-    });
+    for (let i = 0; i < waiting.length; i++) {
+        await QueueEntry.findByIdAndUpdate(waiting[i]._id || waiting[i].id, { position: i + 1 });
+    }
 
-    recalculateWaitTimes(doctorId);
-    return getQueue(doctorId);
+    await recalculateWaitTimes(doctorId);
+    return await getQueue(doctorId);
 }
 
-function calculateWaitTime(doctorId, position) {
-    const doctor = db.prepare('SELECT avg_consultation_mins FROM doctors WHERE id = ?').get(doctorId);
+async function calculateWaitTime(doctorId, position) {
+    const doctor = await Doctor.findById(doctorId).select('avg_consultation_mins');
     const avgTime = doctor ? doctor.avg_consultation_mins : 15;
 
     // Current consultation remaining time (estimate half done)
-    const inConsultation = db.prepare(`SELECT * FROM queue_entries WHERE doctor_id = ? AND status = 'in_consultation'`).get(doctorId);
+    const inConsultation = await QueueEntry.findOne({ doctor_id: doctorId, status: 'in_consultation' });
     let waitMins = 0;
     if (inConsultation) {
         waitMins += Math.floor(avgTime / 2);
@@ -130,16 +177,15 @@ function calculateWaitTime(doctorId, position) {
     return waitMins;
 }
 
-function recalculateWaitTimes(doctorId) {
-    const queue = db.prepare(`SELECT id, position FROM queue_entries WHERE doctor_id = ? AND status = 'waiting' ORDER BY position`).all(doctorId);
-    const doctor = db.prepare('SELECT avg_consultation_mins FROM doctors WHERE id = ?').get(doctorId);
+async function recalculateWaitTimes(doctorId) {
+    const queue = await QueueEntry.find({ doctor_id: doctorId, status: 'waiting' }).sort({ position: 1 });
+    const doctor = await Doctor.findById(doctorId).select('avg_consultation_mins');
     const avgTime = doctor ? doctor.avg_consultation_mins : 15;
 
-    const updateStmt = db.prepare('UPDATE queue_entries SET estimated_wait_mins = ? WHERE id = ?');
-    queue.forEach((entry) => {
+    for (const entry of queue) {
         const wait = entry.position * avgTime;
-        updateStmt.run(wait, entry.id);
-    });
+        await QueueEntry.findByIdAndUpdate(entry._id, { estimated_wait_mins: wait });
+    }
 }
 
 module.exports = { getQueue, addToQueue, removeFromQueue, moveToNext, reorderQueue, rebalanceQueue, calculateWaitTime };

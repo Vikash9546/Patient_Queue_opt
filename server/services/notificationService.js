@@ -1,28 +1,36 @@
-const { db } = require('../config/database');
+const Notification = require('../models/Notification');
 const { generateId } = require('../utils/helpers');
 
-function sendNotification({ patientId, doctorId, type, message, channel }) {
+async function sendNotification({ patientId, doctorId, type, message, channel }) {
     const id = generateId();
-    db.prepare(`INSERT INTO notifications (id, patient_id, doctor_id, type, message, channel) VALUES (?, ?, ?, ?, ?, ?)`)
-        .run(id, patientId || null, doctorId || null, type, message, channel || 'app');
+    await Notification.create({
+        _id: id,
+        patient_id: patientId || null,
+        doctor_id: doctorId || null,
+        type,
+        message,
+        channel: channel || 'app'
+    });
 
     console.log(`📱 Notification [${type}]: ${message}`);
     return { id, type, message };
 }
 
-function getNotifications(userId, unreadOnly = false) {
-    let query = `SELECT * FROM notifications WHERE (patient_id = ? OR doctor_id = ?)`;
-    if (unreadOnly) query += ` AND is_read = 0`;
-    query += ` ORDER BY sent_at DESC LIMIT 50`;
-    return db.prepare(query).all(userId, userId);
+async function getNotifications(userId, unreadOnly = false) {
+    const filter = {
+        $or: [{ patient_id: userId }, { doctor_id: userId }]
+    };
+    if (unreadOnly) filter.is_read = 0;
+
+    return await Notification.find(filter).sort({ sent_at: -1 }).limit(50);
 }
 
-function markAsRead(notificationId) {
-    db.prepare('UPDATE notifications SET is_read = 1 WHERE id = ?').run(notificationId);
+async function markAsRead(notificationId) {
+    await Notification.findByIdAndUpdate(notificationId, { is_read: 1 });
 }
 
-function notifyQueueUpdate(doctorId, message) {
-    return sendNotification({
+async function notifyQueueUpdate(doctorId, message) {
+    return await sendNotification({
         doctorId,
         type: 'queue_update',
         message,
@@ -30,8 +38,8 @@ function notifyQueueUpdate(doctorId, message) {
     });
 }
 
-function notifyEmergency(doctorId, patientName) {
-    return sendNotification({
+async function notifyEmergency(doctorId, patientName) {
+    return await sendNotification({
         doctorId,
         type: 'emergency',
         message: `🚨 EMERGENCY: ${patientName} requires immediate attention!`,
@@ -39,8 +47,8 @@ function notifyEmergency(doctorId, patientName) {
     });
 }
 
-function notifyPatientWaitUpdate(patientId, waitMins) {
-    return sendNotification({
+async function notifyPatientWaitUpdate(patientId, waitMins) {
+    return await sendNotification({
         patientId,
         type: 'wait_update',
         message: `Your estimated wait time is now ${waitMins} minutes.`,

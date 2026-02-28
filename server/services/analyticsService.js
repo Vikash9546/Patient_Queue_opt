@@ -1,13 +1,21 @@
-const { db } = require('../config/database');
+const Appointment = require('../models/Appointment');
+const AnalyticsLog = require('../models/AnalyticsLog');
+const Doctor = require('../models/Doctor');
 
-function getDailyStats(date) {
+async function getDailyStats(date) {
     const targetDate = date || new Date().toISOString().split('T')[0];
 
-    const stats = db.prepare(`SELECT * FROM analytics_logs WHERE log_date = ?`).all(targetDate);
+    const startOfDay = new Date(targetDate + 'T00:00:00.000Z');
+    const endOfDay = new Date(targetDate + 'T23:59:59.999Z');
+
+    const stats = await AnalyticsLog.find({ log_date: { $gte: startOfDay, $lte: endOfDay } });
 
     if (stats.length === 0) {
         // Calculate from live data
-        const appointments = db.prepare(`SELECT * FROM appointments WHERE date(scheduled_time) = ?`).all(targetDate);
+        const appointments = await Appointment.find({
+            scheduled_time: { $gte: startOfDay, $lte: endOfDay }
+        });
+
         const total = appointments.length;
         const completed = appointments.filter(a => a.status === 'completed').length;
         const noShows = appointments.filter(a => a.status === 'no_show').length;
@@ -36,52 +44,103 @@ function getDailyStats(date) {
     };
 }
 
-function getWaitTimeAnalytics(days = 7) {
-    const stats = db.prepare(`SELECT log_date, AVG(avg_wait_time) as avg_wait, AVG(avg_consultation_time) as avg_consult
-    FROM analytics_logs WHERE log_date >= date('now', '-${days} days')
-    GROUP BY log_date ORDER BY log_date`).all();
+async function getWaitTimeAnalytics(days = 7) {
+    const sinceDate = new Date();
+    sinceDate.setDate(sinceDate.getDate() - days);
+    sinceDate.setHours(0, 0, 0, 0);
+
+    const stats = await AnalyticsLog.aggregate([
+        { $match: { log_date: { $gte: sinceDate } } },
+        {
+            $group: {
+                _id: { $dateToString: { format: '%Y-%m-%d', date: '$log_date' } },
+                avg_wait: { $avg: '$avg_wait_time' },
+                avg_consult: { $avg: '$avg_consultation_time' }
+            }
+        },
+        { $sort: { _id: 1 } }
+    ]);
 
     return stats.map(s => ({
-        date: s.log_date,
+        date: s._id,
         avgWait: Math.round(s.avg_wait * 10) / 10,
         avgConsult: Math.round(s.avg_consult * 10) / 10
     }));
 }
 
-function getDoctorUtilization(days = 7) {
-    return db.prepare(`SELECT d.name, d.specialty, 
-    AVG(al.utilization_pct) as avg_utilization,
-    SUM(al.total_patients) as total_patients,
-    AVG(al.avg_wait_time) as avg_wait
-    FROM analytics_logs al JOIN doctors d ON al.doctor_id = d.id
-    WHERE al.log_date >= date('now', '-${days} days')
-    GROUP BY al.doctor_id`).all();
+async function getDoctorUtilization(days = 7) {
+    const sinceDate = new Date();
+    sinceDate.setDate(sinceDate.getDate() - days);
+    sinceDate.setHours(0, 0, 0, 0);
+
+    const stats = await AnalyticsLog.aggregate([
+        { $match: { log_date: { $gte: sinceDate } } },
+        {
+            $group: {
+                _id: '$doctor_id',
+                avg_utilization: { $avg: '$utilization_pct' },
+                total_patients: { $sum: '$total_patients' },
+                avg_wait: { $avg: '$avg_wait_time' }
+            }
+        }
+    ]);
+
+    // Populate doctor names
+    const result = await Promise.all(stats.map(async (s) => {
+        const doctor = await Doctor.findById(s._id);
+        return {
+            name: doctor ? doctor.name : 'Unknown',
+            specialty: doctor ? doctor.specialty : '',
+            avg_utilization: s.avg_utilization,
+            total_patients: s.total_patients,
+            avg_wait: s.avg_wait
+        };
+    }));
+
+    return result;
 }
 
-function getPeakHours() {
-    // Simulated peak hours from appointment data
-    const hours = db.prepare(`SELECT 
-    CAST(strftime('%H', scheduled_time) AS INTEGER) as hour,
-    COUNT(*) as count
-    FROM appointments
-    GROUP BY hour ORDER BY hour`).all();
+async function getPeakHours() {
+    const appointments = await Appointment.find();
+
+    // Count by hour
+    const hourCounts = {};
+    appointments.forEach(a => {
+        const hour = new Date(a.scheduled_time).getHours();
+        hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+    });
 
     // Fill missing hours
     const result = [];
     for (let h = 8; h <= 18; h++) {
-        const found = hours.find(x => x.hour === h);
-        result.push({ hour: `${h}:00`, patients: found ? found.count : 0 });
+        result.push({ hour: `${h}:00`, patients: hourCounts[h] || 0 });
     }
     return result;
 }
 
-function getNoShowStats(days = 30) {
-    return db.prepare(`SELECT log_date,
-    SUM(no_shows) as no_shows,
-    SUM(total_patients) as total,
-    ROUND(CAST(SUM(no_shows) AS REAL) / MAX(SUM(total_patients), 1) * 100, 1) as no_show_rate
-    FROM analytics_logs WHERE log_date >= date('now', '-${days} days')
-    GROUP BY log_date ORDER BY log_date`).all();
+async function getNoShowStats(days = 30) {
+    const sinceDate = new Date();
+    sinceDate.setDate(sinceDate.getDate() - days);
+    sinceDate.setHours(0, 0, 0, 0);
+
+    const stats = await AnalyticsLog.aggregate([
+        { $match: { log_date: { $gte: sinceDate } } },
+        {
+            $group: {
+                _id: { $dateToString: { format: '%Y-%m-%d', date: '$log_date' } },
+                no_shows: { $sum: '$no_shows' },
+                total: { $sum: '$total_patients' }
+            }
+        },
+        { $sort: { _id: 1 } }
+    ]);
+
+    return stats.map(s => ({
+        log_date: s._id,
+        no_shows: s.no_shows,
+        total: s.total,
+        no_show_rate: s.total > 0 ? Math.round((s.no_shows / s.total) * 1000) / 10 : 0
+    }));
 }
 
 function getBeforeAfterComparison() {

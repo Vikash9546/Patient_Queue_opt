@@ -1,13 +1,20 @@
-const { db } = require('../config/database');
+const Patient = require('../models/Patient');
+const Appointment = require('../models/Appointment');
+const Doctor = require('../models/Doctor');
+const QueueEntry = require('../models/QueueEntry');
 const { generateId } = require('../utils/helpers');
 const queueService = require('../services/queueService');
 const aiService = require('../services/aiService');
 const notificationService = require('../services/notificationService');
 
-exports.getQueue = (req, res) => {
-    const doctorId = req.query.doctor_id;
-    const queue = queueService.getQueue(doctorId);
-    res.json({ success: true, data: queue });
+exports.getQueue = async (req, res) => {
+    try {
+        const doctorId = req.query.doctor_id;
+        const queue = await queueService.getQueue(doctorId);
+        res.json({ success: true, data: queue });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
 };
 
 exports.addWalkIn = async (req, res) => {
@@ -30,25 +37,39 @@ exports.addWalkIn = async (req, res) => {
 
         // Create patient
         const patientId = generateId();
-        db.prepare('INSERT INTO patients (id, name, age, phone, medical_history) VALUES (?, ?, ?, ?, ?)')
-            .run(patientId, patient_name, patient_age || null, patient_phone || null, JSON.stringify(medical_history || []));
+        await Patient.create({
+            _id: patientId, name: patient_name,
+            age: patient_age || null, phone: patient_phone || null,
+            medical_history: JSON.stringify(medical_history || [])
+        });
 
         // Create appointment
         const appointmentId = generateId();
-        db.prepare(`INSERT INTO appointments (id, patient_id, doctor_id, scheduled_time, estimated_duration, status, urgency_level, symptoms, is_walkin)
-      VALUES (?, ?, ?, datetime('now'), ?, 'checked_in', ?, ?, 1)`)
-            .run(appointmentId, patientId, doctor_id, durationResult.estimated_minutes, triageResult.urgency, symptoms || '');
+        await Appointment.create({
+            _id: appointmentId,
+            patient_id: patientId,
+            doctor_id,
+            scheduled_time: new Date(),
+            estimated_duration: durationResult.estimated_minutes,
+            status: 'checked_in',
+            urgency_level: triageResult.urgency,
+            symptoms: symptoms || '',
+            is_walkin: 1
+        });
 
         // Add to queue with priority
         const priority = triageResult.urgency === 'emergency' ? 'emergency' :
             triageResult.urgency === 'high' ? 'high' : 'normal';
 
-        const queueEntry = queueService.addToQueue({
+        const queueEntry = await queueService.addToQueue({
             appointmentId, patientId, doctorId: doctor_id, priority
         });
 
         // Broadcast update
-        if (global.broadcast) global.broadcast({ type: 'queue_update', data: queueService.getQueue(doctor_id) });
+        if (global.broadcast) {
+            const queueData = await queueService.getQueue(doctor_id);
+            global.broadcast({ type: 'queue_update', data: queueData });
+        }
 
         res.json({
             success: true,
@@ -70,28 +91,39 @@ exports.addEmergency = async (req, res) => {
         const { patient_name, patient_age, patient_phone, symptoms, doctor_id } = req.body;
 
         const patientId = generateId();
-        db.prepare('INSERT INTO patients (id, name, age, phone) VALUES (?, ?, ?, ?)')
-            .run(patientId, patient_name, patient_age || null, patient_phone || null);
+        await Patient.create({
+            _id: patientId, name: patient_name,
+            age: patient_age || null, phone: patient_phone || null
+        });
 
         const appointmentId = generateId();
-        db.prepare(`INSERT INTO appointments (id, patient_id, doctor_id, scheduled_time, estimated_duration, status, urgency_level, symptoms, is_walkin)
-      VALUES (?, ?, ?, datetime('now'), 30, 'checked_in', 'emergency', ?, 1)`)
-            .run(appointmentId, patientId, doctor_id, symptoms || 'Emergency');
+        await Appointment.create({
+            _id: appointmentId,
+            patient_id: patientId,
+            doctor_id,
+            scheduled_time: new Date(),
+            estimated_duration: 30,
+            status: 'checked_in',
+            urgency_level: 'emergency',
+            symptoms: symptoms || 'Emergency',
+            is_walkin: 1
+        });
 
-        const queueEntry = queueService.addToQueue({
+        const queueEntry = await queueService.addToQueue({
             appointmentId, patientId, doctorId: doctor_id, priority: 'emergency'
         });
 
         // Notify doctor
-        notificationService.notifyEmergency(doctor_id, patient_name);
+        await notificationService.notifyEmergency(doctor_id, patient_name);
 
         // Rebalance queue
-        queueService.rebalanceQueue(doctor_id);
+        await queueService.rebalanceQueue(doctor_id);
 
         // Broadcast update
         if (global.broadcast) {
             global.broadcast({ type: 'emergency', data: { patient_name, doctor_id } });
-            global.broadcast({ type: 'queue_update', data: queueService.getQueue(doctor_id) });
+            const queueData = await queueService.getQueue(doctor_id);
+            global.broadcast({ type: 'queue_update', data: queueData });
         }
 
         res.json({
@@ -107,59 +139,93 @@ exports.addEmergency = async (req, res) => {
     }
 };
 
-exports.reorder = (req, res) => {
-    const { doctor_id, order } = req.body;
-    queueService.reorderQueue(doctor_id, order);
+exports.reorder = async (req, res) => {
+    try {
+        const { doctor_id, order } = req.body;
+        await queueService.reorderQueue(doctor_id, order);
 
-    if (global.broadcast) global.broadcast({ type: 'queue_update', data: queueService.getQueue(doctor_id) });
+        if (global.broadcast) {
+            const queueData = await queueService.getQueue(doctor_id);
+            global.broadcast({ type: 'queue_update', data: queueData });
+        }
 
-    res.json({ success: true, message: 'Queue reordered' });
-};
-
-exports.rebalance = (req, res) => {
-    const { doctor_id } = req.body;
-    const doctors = doctor_id ? [doctor_id] : db.prepare('SELECT id FROM doctors').all().map(d => d.id);
-
-    doctors.forEach(id => {
-        queueService.rebalanceQueue(id);
-    });
-
-    if (global.broadcast) global.broadcast({ type: 'queue_update', data: queueService.getQueue(doctor_id) });
-
-    res.json({ success: true, message: 'Queue rebalanced' });
-};
-
-exports.callNext = (req, res) => {
-    const { doctor_id } = req.body;
-    const next = queueService.moveToNext(doctor_id);
-
-    if (global.broadcast) global.broadcast({ type: 'queue_update', data: queueService.getQueue(doctor_id) });
-
-    if (next) {
-        res.json({ success: true, data: next, message: 'Next patient called' });
-    } else {
-        res.json({ success: true, data: null, message: 'No more patients in queue' });
+        res.json({ success: true, message: 'Queue reordered' });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
     }
 };
 
-exports.checkIn = (req, res) => {
-    const { appointment_id, doctor_id } = req.body;
+exports.rebalance = async (req, res) => {
+    try {
+        const { doctor_id } = req.body;
+        let doctorIds;
+        if (doctor_id) {
+            doctorIds = [doctor_id];
+        } else {
+            const doctors = await Doctor.find().select('_id');
+            doctorIds = doctors.map(d => d._id);
+        }
 
-    db.prepare("UPDATE appointments SET status = 'checked_in' WHERE id = ?").run(appointment_id);
+        for (const id of doctorIds) {
+            await queueService.rebalanceQueue(id);
+        }
 
-    const appt = db.prepare('SELECT * FROM appointments WHERE id = ?').get(appointment_id);
-    if (appt) {
-        const queueEntry = queueService.addToQueue({
-            appointmentId: appointment_id,
-            patientId: appt.patient_id,
-            doctorId: appt.doctor_id,
-            priority: appt.urgency_level === 'high' ? 'high' : 'normal'
-        });
+        if (global.broadcast) {
+            const queueData = await queueService.getQueue(doctor_id);
+            global.broadcast({ type: 'queue_update', data: queueData });
+        }
 
-        if (global.broadcast) global.broadcast({ type: 'queue_update', data: queueService.getQueue(appt.doctor_id) });
+        res.json({ success: true, message: 'Queue rebalanced' });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
 
-        res.json({ success: true, data: queueEntry });
-    } else {
-        res.status(404).json({ success: false, error: 'Appointment not found' });
+exports.callNext = async (req, res) => {
+    try {
+        const { doctor_id } = req.body;
+        const next = await queueService.moveToNext(doctor_id);
+
+        if (global.broadcast) {
+            const queueData = await queueService.getQueue(doctor_id);
+            global.broadcast({ type: 'queue_update', data: queueData });
+        }
+
+        if (next) {
+            res.json({ success: true, data: next, message: 'Next patient called' });
+        } else {
+            res.json({ success: true, data: null, message: 'No more patients in queue' });
+        }
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+exports.checkIn = async (req, res) => {
+    try {
+        const { appointment_id, doctor_id } = req.body;
+
+        await Appointment.findByIdAndUpdate(appointment_id, { status: 'checked_in' });
+
+        const appt = await Appointment.findById(appointment_id);
+        if (appt) {
+            const queueEntry = await queueService.addToQueue({
+                appointmentId: appointment_id,
+                patientId: appt.patient_id,
+                doctorId: appt.doctor_id,
+                priority: appt.urgency_level === 'high' ? 'high' : 'normal'
+            });
+
+            if (global.broadcast) {
+                const queueData = await queueService.getQueue(appt.doctor_id);
+                global.broadcast({ type: 'queue_update', data: queueData });
+            }
+
+            res.json({ success: true, data: queueEntry });
+        } else {
+            res.status(404).json({ success: false, error: 'Appointment not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
     }
 };
