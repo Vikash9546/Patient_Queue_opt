@@ -15,8 +15,7 @@
 
 ## 1. Problem Statement
 
-### Problem Title
-**Inefficient Patient Queue Management in Small & Mid-Sized Clinics**
+**The Waiting Room That Never Moves**
 
 ### Problem Description
 In India, patients wait an average of **45+ minutes beyond their scheduled appointment time** at clinics. Receptionists manually manage queues using registers or basic software that cannot adapt to real-time changes like emergencies, walk-ins, no-shows, or consultations running overtime. This leads to frustrated patients, stressed doctors, poor resource utilization, and lost revenue.
