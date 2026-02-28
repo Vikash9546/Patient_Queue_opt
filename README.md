@@ -620,9 +620,11 @@ npm run dev
 
 ## 14. Team Roles & Responsibilities
 
-| Member Name | Role | Responsibilities |
-|-------------|------|-----------------|
-| **Harshit Singh** | Full-Stack Developer & Team Lead | Architecture design, Backend API, Frontend UI, AI integration, Database design, Documentation |
+| Member Name | URN | Role | GitHub | Responsibilities |
+|-------------|-----|------|--------|-----------------|
+| **Vikash Kumar** | 2024-B-01022006A | Backend Developer | [Vikash9546](https://github.com/Vikash9546) | Node.js + Express API development, REST endpoint design, WebSocket real-time server, AI service integration (Gemini API), queue management logic, authentication & middleware, business logic for triage, scheduling & rebalancing |
+| **Harshit Singh** | 2024-B-21082007 | Frontend Developer | [AkaHarshit](https://github.com/AkaHarshit) | React + Vite UI development, Tailwind CSS styling & glassmorphism design, 6 page components (Login, Reception, Doctor, Queue TV, Analytics, Booking), Context API state management, WebSocket client integration, Recharts analytics, voice receptionist (Web Speech API), AI chatbot UI, responsive dark/light theme |
+| **Om Gupta** | 2024-B-13082005 | Database & Deployment | [omg0014](https://github.com/omg0014) | SQLite database schema design, ER modeling & normalization, seed data preparation, SQL query optimization & indexing, database migrations, Docker containerization, CI/CD pipeline setup, Vercel (frontend) & Render (backend) deployment, environment configuration & secrets management |
 
 ---
 
@@ -683,5 +685,8 @@ npm run dev
 </p>
 
 <p align="center">
-  Built with ❤️ by <a href="https://github.com/AkaHarshit">Harshit Singh</a>
+  Built with ❤️ by
+  <a href="https://github.com/Vikash9546">Vikash Kumar</a> · 
+  <a href="https://github.com/AkaHarshit">Harshit Singh</a> · 
+  <a href="https://github.com/omg0014">Om Gupta</a>
 </p>
