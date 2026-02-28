@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const patientController = require('../controllers/patientController');
 
+router.get('/history', patientController.getHistory);
 router.get('/', patientController.getAll);
 router.get('/search', patientController.search);
 router.get('/:id', patientController.getById);

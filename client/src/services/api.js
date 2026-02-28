@@ -25,6 +25,8 @@ export const api = {
     getPatient: (id) => request(`/patients/${id}`),
     createPatient: (data) => request('/patients', { method: 'POST', body: JSON.stringify(data) }),
     searchPatients: (q) => request(`/patients/search?q=${q}`),
+    getPatientHistory: ({ page, limit, q, urgency, visit_range, sort } = {}) =>
+        request(`/patients/history?page=${page || 1}&limit=${limit || 10}&q=${q || ''}&urgency=${urgency || ''}&visit_range=${visit_range || ''}&sort=${sort || 'recent'}`),
 
     // Doctors
     getDoctors: () => request('/doctors'),
