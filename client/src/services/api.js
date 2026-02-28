@@ -69,6 +69,9 @@ export const api = {
     // Demo
     simulate: (count) => request('/demo/simulate', { method: 'POST', body: JSON.stringify({ count: count || 50 }) }),
     resetDemo: () => request('/demo/reset', { method: 'POST' }),
+
+    // Activity Logs
+    getActivityLogs: (page = 1, limit = 100) => request(`/activity?page=${page}&limit=${limit}`),
 };
 
 export default api;

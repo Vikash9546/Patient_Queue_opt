@@ -8,6 +8,7 @@ import QueueTVScreen from './pages/QueueTVScreen';
 import AnalyticsPage from './pages/AnalyticsPage';
 import PatientBookingPage from './pages/PatientBookingPage';
 import PatientHistoryPage from './pages/PatientHistoryPage';
+import ActivityDashboard from './pages/ActivityDashboard';
 
 function App() {
     return (
@@ -23,6 +24,7 @@ function App() {
                         <Route path="/analytics" element={<AnalyticsPage />} />
                         <Route path="/book" element={<PatientBookingPage />} />
                         <Route path="/patient-history" element={<PatientHistoryPage />} />
+                        <Route path="/activity-logs" element={<ActivityDashboard />} />
                     </Routes>
                 </BrowserRouter>
             </QueueProvider>

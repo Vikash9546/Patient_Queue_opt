@@ -100,6 +100,7 @@ export default function DoctorDashboard() {
                             <button className="px-3 py-1.5 font-semibold text-[#0ea5e9] border-b-2 border-[#0ea5e9]">Live Queue</button>
                             <button onClick={() => navigate('/patient-history')} className="px-3 py-1.5 font-medium text-slate-500 hover:text-slate-700 transition-colors">Patient History</button>
                             <button onClick={() => navigate('/analytics')} className="px-3 py-1.5 font-medium text-slate-500 hover:text-slate-700 transition-colors">Analytics</button>
+                            <button onClick={() => navigate('/activity-logs')} className="px-3 py-1.5 font-medium text-slate-500 hover:text-slate-700 transition-colors">Activity Logs</button>
                         </nav>
                     </div>
                     <div className="flex items-center gap-3">

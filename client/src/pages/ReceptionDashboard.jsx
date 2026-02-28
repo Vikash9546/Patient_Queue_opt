@@ -174,6 +174,7 @@ export default function ReceptionDashboard() {
                             { key: 'livequeue', label: 'Live Queue', onClick: () => navigate('/doctor') },
                             { key: 'history', label: 'Patient History', onClick: () => navigate('/patient-history') },
                             { key: 'analytics', label: 'Analytics', onClick: () => navigate('/analytics') },
+                            { key: 'activity', label: 'Activity Logs', onClick: () => navigate('/activity-logs') },
                         ].map(tab => (
                             <button key={tab.key} onClick={tab.onClick || (() => setActiveTab(tab.key))}
                                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${activeTab === tab.key ? 'text-blue-600 bg-blue-50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>

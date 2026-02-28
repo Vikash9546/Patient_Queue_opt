@@ -43,6 +43,7 @@ export default function AnalyticsPage() {
                             <button onClick={() => navigate('/doctor')} className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-all">Live Queue</button>
                             <button onClick={() => navigate('/patient-history')} className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-all">Patient History</button>
                             <button className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg">Analytics</button>
+                            <button onClick={() => navigate('/activity-logs')} className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-all">Activity Logs</button>
                         </nav>
                     </div>
                     <div className="flex items-center gap-3">
