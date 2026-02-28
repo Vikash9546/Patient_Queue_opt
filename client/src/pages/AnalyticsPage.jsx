@@ -39,8 +39,9 @@ export default function AnalyticsPage() {
                             <span className="font-bold text-slate-800 text-lg">MediQueue AI</span>
                         </div>
                         <nav className="flex items-center gap-1">
-                            <button onClick={() => navigate('/reception')} className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-all">Dashboard</button>
                             <button onClick={() => navigate('/doctor')} className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-all">Live Queue</button>
+                            <button onClick={() => navigate('/patient-history')} className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-all">Patient History</button>
+                            <button onClick={() => navigate('/reception')} className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-all">Schedules</button>
                             <button className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg">Analytics</button>
                         </nav>
                     </div>

@@ -165,7 +165,9 @@ export default function ReceptionDashboard() {
                     <nav className="flex items-center gap-1">
                         {[
                             { key: 'dashboard', label: 'Dashboard' },
-                            { key: 'schedules', label: 'Schedules', onClick: () => navigate('/doctor') },
+                            { key: 'livequeue', label: 'Live Queue', onClick: () => navigate('/doctor') },
+                            { key: 'history', label: 'Patient History', onClick: () => navigate('/patient-history') },
+                            { key: 'schedules', label: 'Schedules' },
                             { key: 'analytics', label: 'Analytics', onClick: () => navigate('/analytics') },
                         ].map(tab => (
                             <button key={tab.key} onClick={tab.onClick || (() => setActiveTab(tab.key))}
@@ -309,13 +311,13 @@ export default function ReceptionDashboard() {
                                             )}
                                             {waitingP.map(entry => (
                                                 <div key={entry.id || entry._id} className={`flex-shrink-0 px-4 py-2.5 rounded-xl min-w-[160px] border ${entry.priority === 'emergency' ? 'bg-red-50 border-red-200' :
-                                                        entry.priority === 'high' ? 'bg-amber-50 border-amber-200' :
-                                                            'bg-slate-50 border-slate-200'
+                                                    entry.priority === 'high' ? 'bg-amber-50 border-amber-200' :
+                                                        'bg-slate-50 border-slate-200'
                                                     }`}>
                                                     <div className="flex items-center justify-between">
                                                         <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${entry.priority === 'emergency' ? 'bg-red-100 text-red-600' :
-                                                                entry.priority === 'high' ? 'bg-amber-100 text-amber-600' :
-                                                                    'bg-slate-100 text-slate-500'
+                                                            entry.priority === 'high' ? 'bg-amber-100 text-amber-600' :
+                                                                'bg-slate-100 text-slate-500'
                                                             }`}>#{entry.position}</span>
                                                         <span className="text-xs text-slate-400">{entry.estimated_wait_mins}m</span>
                                                     </div>
@@ -349,8 +351,8 @@ export default function ReceptionDashboard() {
                         {/* AI Triage Alert */}
                         {triageResult && (
                             <div className={`rounded-2xl p-5 border shadow-sm ${triageResult.urgency === 'emergency' ? 'bg-red-50 border-red-200' :
-                                    triageResult.urgency === 'high' ? 'bg-amber-50 border-amber-200' :
-                                        'bg-emerald-50 border-emerald-200'
+                                triageResult.urgency === 'high' ? 'bg-amber-50 border-amber-200' :
+                                    'bg-emerald-50 border-emerald-200'
                                 }`}>
                                 <div className="flex items-center gap-2 mb-2">
                                     <span className="text-lg">🤖</span>
@@ -358,9 +360,9 @@ export default function ReceptionDashboard() {
                                     <button onClick={() => setTriageResult(null)} className="ml-auto text-slate-400 hover:text-slate-600">✕</button>
                                 </div>
                                 <div className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase ${triageResult.urgency === 'emergency' ? 'bg-red-200 text-red-700' :
-                                        triageResult.urgency === 'high' ? 'bg-amber-200 text-amber-700' :
-                                            triageResult.urgency === 'medium' ? 'bg-blue-200 text-blue-700' :
-                                                'bg-emerald-200 text-emerald-700'
+                                    triageResult.urgency === 'high' ? 'bg-amber-200 text-amber-700' :
+                                        triageResult.urgency === 'medium' ? 'bg-blue-200 text-blue-700' :
+                                            'bg-emerald-200 text-emerald-700'
                                     }`}>{triageResult.urgency} — Score: {triageResult.triage_score}/10</div>
                                 <p className="text-xs text-slate-600 mt-2">{triageResult.reasoning}</p>
                             </div>
@@ -451,9 +453,9 @@ export default function ReceptionDashboard() {
                                         <td className="p-4 text-sm text-slate-500">{appt.doctor_name}</td>
                                         <td className="p-4 text-sm text-slate-600">{formatTime(appt.scheduled_time)}</td>
                                         <td className="p-4"><span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase ${appt.urgency_level === 'emergency' ? 'bg-red-100 text-red-600' :
-                                                appt.urgency_level === 'high' ? 'bg-amber-100 text-amber-600' :
-                                                    appt.urgency_level === 'medium' ? 'bg-blue-100 text-blue-600' :
-                                                        'bg-emerald-100 text-emerald-600'
+                                            appt.urgency_level === 'high' ? 'bg-amber-100 text-amber-600' :
+                                                appt.urgency_level === 'medium' ? 'bg-blue-100 text-blue-600' :
+                                                    'bg-emerald-100 text-emerald-600'
                                             }`}>{appt.urgency_level}</span></td>
                                         <td className="p-4 text-sm text-slate-500">{appt.estimated_duration}min</td>
                                         <td className="p-4"><span className={`text-sm font-medium ${getStatusColor(appt.status)}`}>{getStatusLabel(appt.status)}</span></td>
