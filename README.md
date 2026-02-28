@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/Node.js-Express-green?style=for-the-badge&logo=node.js" />
   <img src="https://img.shields.io/badge/AI-Gemini-orange?style=for-the-badge&logo=google" />
   <img src="https://img.shields.io/badge/TailwindCSS-3.4-38bdf8?style=for-the-badge&logo=tailwindcss" />
-  <img src="https://img.shields.io/badge/SQLite-Database-003B57?style=for-the-badge&logo=sqlite" />
+  <img src="https://img.shields.io/badge/MongoDB-Database-47A248?style=for-the-badge&logo=mongodb" />
 </p>
 
 # 🏥 MediQueue AI — Intelligent Patient Queue Optimization System
@@ -111,7 +111,7 @@ Use Google Gemini AI to predict consultation duration, triage walk-ins, detect p
 ### High-Level Flow
 
 ```
-Patient → React Frontend → Express REST API → Gemini AI Service → SQLite Database → Real-Time Response via WebSocket
+Patient → React Frontend → Express REST API → Gemini AI Service → MongoDB Database → Real-Time Response via WebSocket
 ```
 
 ### Architecture Description
@@ -119,7 +119,7 @@ The system follows a **3-tier architecture** with an AI middleware layer:
 - **Frontend (React + Vite)** — Role-based dashboards for Reception, Doctor, TV Display, Patient Booking, and Analytics
 - **Backend (Node.js + Express)** — REST API with 8 controller modules, JWT auth, and WebSocket server
 - **AI Layer (Google Gemini)** — Consultation duration estimation, triage classification, no-show prediction, smart scheduling, and chatbot — all with intelligent fallbacks
-- **Database (SQLite)** — Lightweight, zero-config, WAL-mode enabled with 7 tables
+- **Database (MongoDB)** — Flexible NoSQL document store with 7 collections, Mongoose ODM for schema validation
 
 ### Architecture Diagram
 
@@ -156,7 +156,7 @@ graph TB
         CHATBOT[Chatbot Engine]
     end
 
-    subgraph DB["🗄️ Database — SQLite"]
+    subgraph DB["🗄️ Database — MongoDB"]
         PATIENTS[(Patients)]
         DOCTORS[(Doctors)]
         APPOINTMENTS[(Appointments)]
@@ -373,7 +373,7 @@ Self-generated using the `DemoSimulator` module (`server/controllers/demoControl
 | **Charts** | Recharts | Interactive analytics visualizations |
 | **Icons** | Lucide React | Modern icon set |
 | **Backend** | Node.js, Express.js | REST API server |
-| **Database** | SQLite (better-sqlite3) | Embedded, zero-config, WAL mode |
+| **Database** | MongoDB (Mongoose) | NoSQL document store with flexible schema |
 | **AI/ML** | Google Gemini 1.5 Flash | Triage, duration estimation, no-show prediction |
 | **Real-time** | WebSocket (ws) | Live queue updates to all clients |
 | **Auth** | JWT (jsonwebtoken) | Role-based access control |
@@ -471,7 +471,7 @@ Self-generated using the `DemoSimulator` module (`server/controllers/demoControl
 ### Checkpoint 2: Backend Development
 **Deliverables:**
 - [x] Express.js server setup with middleware
-- [x] SQLite database with schema + seed data
+- [x] MongoDB database with Mongoose models + seed data
 - [x] 8 REST API controller modules (Auth, Patient, Doctor, Appointment, Queue, AI, Analytics, Demo)
 - [x] 4 service modules (AI Service, Queue Service, Notification Service, Analytics Service)
 - [x] WebSocket server for real-time updates
@@ -606,7 +606,7 @@ npm run dev
 | 1 | Problem Statement & Solution Design | ✅ Complete |
 | 2 | System Architecture Diagram | ✅ Complete |
 | 3 | ER Diagram & Database Schema | ✅ Complete |
-| 4 | Backend API (Node.js + Express + SQLite) | ✅ Complete |
+| 4 | Backend API (Node.js + Express + MongoDB) | ✅ Complete |
 | 5 | Frontend UI (React + Vite + Tailwind) | ✅ Complete |
 | 6 | AI Integration (Gemini API) | ✅ Complete |
 | 7 | Real-Time WebSocket Updates | ✅ Complete |
@@ -624,7 +624,7 @@ npm run dev
 |-------------|-----|------|--------|-----------------|
 | **Vikash Kumar** | 2024-B-01022006A | Backend Developer | [Vikash9546](https://github.com/Vikash9546) | Node.js + Express API development, REST endpoint design, WebSocket real-time server, AI service integration (Gemini API), queue management logic, authentication & middleware, business logic for triage, scheduling & rebalancing |
 | **Harshit Singh** | 2024-B-21082007 | Frontend Developer | [AkaHarshit](https://github.com/AkaHarshit) | React + Vite UI development, Tailwind CSS styling & glassmorphism design, 6 page components (Login, Reception, Doctor, Queue TV, Analytics, Booking), Context API state management, WebSocket client integration, Recharts analytics, voice receptionist (Web Speech API), AI chatbot UI, responsive dark/light theme |
-| **Om Gupta** | 2024-B-13082005 | Database & Deployment | [omg0014](https://github.com/omg0014) | SQLite database schema design, ER modeling & normalization, seed data preparation, SQL query optimization & indexing, database migrations, Docker containerization, CI/CD pipeline setup, Vercel (frontend) & Render (backend) deployment, environment configuration & secrets management |
+| **Om Gupta** | 2024-B-13082005 | Database & Deployment | [omg0014](https://github.com/omg0014) | MongoDB database design, Mongoose schema & model creation, ER modeling, seed data preparation, query optimization & indexing, database migrations, Docker containerization, CI/CD pipeline setup, Vercel (frontend) & Render (backend) deployment, environment configuration & secrets management |
 
 ---
 
@@ -651,7 +651,7 @@ npm run dev
 | # | Limitation | Mitigation |
 |---|-----------|-----------|
 | 1 | AI accuracy depends on Gemini API availability | Rule-based fallback system ensures 100% uptime |
-| 2 | SQLite not suitable for >100 concurrent users | Architecture supports easy migration to PostgreSQL |
+| 2 | MongoDB Atlas free tier has 512MB storage limit | Upgrade to dedicated cluster for production scale |
 | 3 | No real SMS/WhatsApp delivery | Notification service is mocked, ready for Twilio integration |
 | 4 | Voice input limited by browser support | Works on Chrome, Edge; fallback to text input |
 | 5 | No HIPAA/DISHA compliance yet | Encryption-at-rest and audit logging planned |
