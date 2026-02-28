@@ -3,22 +3,31 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 export default function LoginPage() {
+    const [isRegistering, setIsRegistering] = useState(false);
     const [username, setUsername] = useState('');
+    const [name, setName] = useState('');
+    const [role, setRole] = useState('receptionist');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    async function handleLogin(e) {
+    async function handleSubmit(e) {
         e.preventDefault();
         setLoading(true);
         try {
-            const res = await api.login({ username: username || 'reception1', password: password || 'password123' });
-            localStorage.setItem('mediqueue_token', res.token);
-            localStorage.setItem('mediqueue_user', JSON.stringify(res.user));
-            if (res.user.role === 'doctor') navigate('/doctor');
-            else navigate('/reception');
+            if (isRegistering) {
+                await api.register({ username, password, name: name || username, role });
+                alert('Account created successfully! You can now log in.');
+                setIsRegistering(false);
+            } else {
+                const res = await api.login({ username: username || 'reception1', password: password || 'password123' });
+                localStorage.setItem('mediqueue_token', res.token);
+                localStorage.setItem('mediqueue_user', JSON.stringify(res.user));
+                if (res.user.role === 'doctor') navigate('/doctor');
+                else navigate('/reception');
+            }
         } catch (err) {
-            alert('Login failed');
+            alert(err.message || (isRegistering ? 'Registration failed' : 'Login failed'));
         }
         setLoading(false);
     }
@@ -54,13 +63,33 @@ export default function LoginPage() {
                     <p className="text-slate-400 mt-2">Intelligent Patient Queue System</p>
                 </div>
 
-                <form onSubmit={handleLogin} className="space-y-5">
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    {isRegistering && (
+                        <>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-2">Full Name</label>
+                                <input
+                                    type="text" value={name} onChange={e => setName(e.target.value)}
+                                    className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                    placeholder="Enter your name" required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-2">Role</label>
+                                <select value={role} onChange={e => setRole(e.target.value)} className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer appearance-none">
+                                    <option value="receptionist" className="bg-slate-800">Receptionist</option>
+                                    <option value="doctor" className="bg-slate-800">Doctor</option>
+                                    <option value="admin" className="bg-slate-800">Administrator</option>
+                                </select>
+                            </div>
+                        </>
+                    )}
                     <div>
                         <label className="block text-sm font-medium text-slate-300 mb-2">Username</label>
                         <input
                             type="text" value={username} onChange={e => setUsername(e.target.value)}
                             className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                            placeholder="Enter username"
+                            placeholder="Enter username" required
                         />
                     </div>
                     <div>
@@ -68,15 +97,21 @@ export default function LoginPage() {
                         <input
                             type="password" value={password} onChange={e => setPassword(e.target.value)}
                             className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                            placeholder="Enter password"
+                            placeholder="Enter password" required
                         />
                     </div>
                     <button
                         type="submit" disabled={loading}
                         className="w-full py-3 rounded-xl font-semibold text-white gradient-accent hover:opacity-90 transition-all shadow-lg shadow-indigo-500/30 disabled:opacity-50"
                     >
-                        {loading ? '⏳ Signing in...' : '🔐 Sign In'}
+                        {loading ? 'Please wait...' : isRegistering ? '📝 Create Account' : '🔐 Sign In'}
                     </button>
+
+                    <div className="text-center mt-4">
+                        <button type="button" onClick={() => setIsRegistering(!isRegistering)} className="text-sm border-none bg-transparent text-indigo-400 hover:text-indigo-300 transition-colors">
+                            {isRegistering ? 'Already have an account? Sign In' : 'Need an account? Create one'}
+                        </button>
+                    </div>
                 </form>
 
                 {/* Quick Access */}
