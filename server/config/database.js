@@ -44,6 +44,7 @@ async function seedDatabase() {
   ];
 
   // Patients
+  //no show counts means how many times pateint booked but not coming
   const patients = [
     { _id: 'p1', name: 'Amit Sharma', age: 35, gender: 'Male', phone: '9988776655', email: 'amit@email.com', medical_history: '["Hypertension", "Diabetes Type 2"]', no_show_count: 1, total_visits: 12 },
     { _id: 'p2', name: 'Sneha Gupta', age: 28, gender: 'Female', phone: '9988776656', email: 'sneha@email.com', medical_history: '["Asthma"]', no_show_count: 0, total_visits: 5 },
