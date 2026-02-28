@@ -19,16 +19,26 @@ exports.getQueue = async (req, res) => {
 
 exports.addWalkIn = async (req, res) => {
     try {
-        const { patient_name, patient_age, patient_phone, symptoms, doctor_id, medical_history } = req.body;
+        const { patient_name, patient_age, patient_phone, symptoms, doctor_id, medical_history, manual_urgency } = req.body;
 
-        // AI Triage
-        const triageResult = await aiService.triagePatient({
-            symptoms: symptoms || '',
-            age: patient_age || 30,
-            medicalHistory: medical_history
-        });
+        let triageResult = {};
 
-        // AI Duration estimate
+        if (manual_urgency) {
+            // Use manually selected urgency
+            triageResult = {
+                urgency: manual_urgency,
+                explanation: `Urgency level manually set to ${manual_urgency.toUpperCase()} by receptionist.`
+            };
+        } else {
+            // AI Triage
+            triageResult = await aiService.triagePatient({
+                symptoms: symptoms || '',
+                age: patient_age || 30,
+                medicalHistory: medical_history
+            });
+        }
+
+        // AI Duration estimate (still runs even for manual to guess time)
         const durationResult = await aiService.estimateConsultationDuration({
             symptoms: symptoms || '',
             age: patient_age || 30,

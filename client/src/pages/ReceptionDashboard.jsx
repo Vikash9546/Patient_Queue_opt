@@ -17,7 +17,8 @@ export default function ReceptionDashboard() {
     const [showChat, setShowChat] = useState(false);
     const [chatMessages, setChatMessages] = useState([{ role: 'bot', text: 'Hello! I\'m MediQueue AI assistant. How can I help you today? 😊' }]);
     const [chatInput, setChatInput] = useState('');
-    const [walkInForm, setWalkInForm] = useState({ patient_name: '', patient_age: '', symptoms: '', doctor_id: '', patient_phone: '' });
+    const [urgencyMode, setUrgencyMode] = useState('ai');
+    const [walkInForm, setWalkInForm] = useState({ patient_name: '', patient_age: '', symptoms: '', doctor_id: '', patient_phone: '', manual_urgency: 'normal' });
     const [bookingForm, setBookingForm] = useState({ patient_name: '', patient_age: '', patient_phone: '', doctor_id: '', symptoms: '', scheduled_time: '', urgency_level: 'low' });
     const [simulating, setSimulating] = useState(false);
     const [triageResult, setTriageResult] = useState(null);
@@ -50,10 +51,14 @@ export default function ReceptionDashboard() {
     async function handleWalkIn(e) {
         e.preventDefault();
         try {
-            const res = await api.addWalkIn(walkInForm);
+            const payload = { ...walkInForm };
+            if (urgencyMode === 'ai') delete payload.manual_urgency;
+
+            const res = await api.addWalkIn(payload);
             setTriageResult(res.data.triage);
             setShowWalkIn(false);
-            setWalkInForm({ patient_name: '', patient_age: '', symptoms: '', doctor_id: '', patient_phone: '' });
+            setWalkInForm({ patient_name: '', patient_age: '', symptoms: '', doctor_id: '', patient_phone: '', manual_urgency: 'normal' });
+            setUrgencyMode('ai');
             fetchQueue(); loadAppointments(); loadStats();
         } catch (e) { alert(e.message); }
     }
@@ -63,7 +68,8 @@ export default function ReceptionDashboard() {
         try {
             await api.addEmergency(walkInForm);
             setShowEmergency(false);
-            setWalkInForm({ patient_name: '', patient_age: '', symptoms: '', doctor_id: '', patient_phone: '' });
+            setWalkInForm({ patient_name: '', patient_age: '', symptoms: '', doctor_id: '', patient_phone: '', manual_urgency: 'normal' });
+            setUrgencyMode('ai');
             fetchQueue(); loadAppointments(); loadStats();
         } catch (e) { alert(e.message); }
     }
@@ -488,7 +494,7 @@ export default function ReceptionDashboard() {
 
             {/* Walk-In / Emergency Modal */}
             {(showWalkIn || showEmergency) && (
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => { setShowWalkIn(false); setShowEmergency(false); }}>
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => { setShowWalkIn(false); setShowEmergency(false); setUrgencyMode('ai'); }}>
                     <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-slide-up" onClick={e => e.stopPropagation()}>
                         <h2 className="text-xl font-bold text-slate-800 mb-1">{showEmergency ? '🚨 Emergency Patient' : '🚶 Walk-In Patient'}</h2>
                         <p className="text-sm text-slate-400 mb-5">{showEmergency ? 'Patient will be prioritized immediately' : 'AI will automatically triage and assign priority'}</p>
@@ -507,6 +513,39 @@ export default function ReceptionDashboard() {
                             <textarea placeholder="Symptoms (e.g., Fever, Headache, Chest Pain)" required value={walkInForm.symptoms}
                                 onChange={e => setWalkInForm({ ...walkInForm, symptoms: e.target.value })}
                                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 placeholder-slate-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 h-24 resize-none" />
+
+                            {!showEmergency && (
+                                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Urgency Evaluation</p>
+                                    <div className="flex gap-4">
+                                        <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                                            <input type="radio" name="urgencyMode" value="ai"
+                                                checked={urgencyMode === 'ai'} onChange={() => setUrgencyMode('ai')}
+                                                className="text-[#0ea5e9] focus:ring-[#0ea5e9]" />
+                                            <span>🤖 AI Triage</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                                            <input type="radio" name="urgencyMode" value="manual"
+                                                checked={urgencyMode === 'manual'} onChange={() => setUrgencyMode('manual')}
+                                                className="text-[#0ea5e9] focus:ring-[#0ea5e9]" />
+                                            <span>✍️ Manual</span>
+                                        </label>
+                                    </div>
+
+                                    {urgencyMode === 'manual' && (
+                                        <div className="mt-3">
+                                            <select value={walkInForm.manual_urgency}
+                                                onChange={e => setWalkInForm({ ...walkInForm, manual_urgency: e.target.value })}
+                                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-[#0ea5e9]">
+                                                <option value="low">Low Priority</option>
+                                                <option value="normal">Normal Priority</option>
+                                                <option value="high">High Priority</option>
+                                                <option value="emergency">Emergency</option>
+                                            </select>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                             <select required value={walkInForm.doctor_id}
                                 onChange={e => setWalkInForm({ ...walkInForm, doctor_id: e.target.value })}
                                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
@@ -517,7 +556,7 @@ export default function ReceptionDashboard() {
                                 <button type="submit" className={`flex-1 py-3 rounded-xl font-semibold text-white ${showEmergency ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-600 hover:bg-blue-700'} transition-all shadow-md`}>
                                     {showEmergency ? '🚨 Add Emergency' : '✅ Add to Queue'}
                                 </button>
-                                <button type="button" onClick={() => { setShowWalkIn(false); setShowEmergency(false); }} className="px-5 py-3 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all font-medium">
+                                <button type="button" onClick={() => { setShowWalkIn(false); setShowEmergency(false); setUrgencyMode('ai'); }} className="px-5 py-3 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all font-medium">
                                     Cancel
                                 </button>
                             </div>
