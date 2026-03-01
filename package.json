@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "description": "Deployment script for Render",
     "scripts": {
-        "build:render": "cd server && npm install && cd ../client && npm install && npm run build",
+        "build:render": "cd server && npm install && cd ../client && npm install --include=dev && npm run build",
         "start": "cd server && npm start"
     }
 }
