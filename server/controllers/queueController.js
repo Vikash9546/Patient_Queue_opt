@@ -30,11 +30,12 @@ exports.addWalkIn = async (req, res) => {
                 explanation: `Urgency level manually set to ${manual_urgency.toUpperCase()} by receptionist.`
             };
         } else {
-            // AI Triage
+            // AI Triage using Decision Tree ML
             triageResult = await aiService.triagePatient({
                 symptoms: symptoms || '',
                 age: patient_age || 30,
-                medicalHistory: medical_history
+                medicalHistory: medical_history,
+                painLevel: pain_level ? parseInt(pain_level) : 3
             });
         }
 

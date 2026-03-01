@@ -1,40 +1,56 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const http = require('http');
 
-let genAI = null;
-let model = null;
+// ── ML Triage Server config ───────────────────────────────────────────────
+const ML_HOST = process.env.ML_HOST || '127.0.0.1';
+const ML_PORT = parseInt(process.env.ML_PORT || '5002');
 
-function initAI() {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (apiKey && apiKey !== 'your_gemini_api_key_here' && apiKey.length > 0) {
-        try {
-            genAI = new GoogleGenerativeAI(apiKey);
-            model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-            console.log('✅ Gemini AI initialized');
-            return true;
-        } catch (e) {
-            console.log('⚠️ Gemini AI initialization failed, using fallback');
-            return false;
-        }
-    }
-    console.log('⚠️ No Gemini API key, using intelligent fallback');
-    return false;
+/**
+ * Calls the Decision Tree ML server for patient urgency prediction.
+ * @param {object} payload  — { age, symptoms_text, pain_level, ... }
+ * @returns {Promise<object|null>}  — { urgency, confidence, triage_score, reasoning } or null
+ */
+function callMLServer(payload) {
+    return new Promise((resolve) => {
+        const body = JSON.stringify(payload);
+        const options = {
+            hostname: ML_HOST,
+            port: ML_PORT,
+            path: '/predict',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(body)
+            }
+        };
+
+        const req = http.request(options, (res) => {
+            let data = '';
+            res.on('data', chunk => { data += chunk; });
+            res.on('end', () => {
+                try { resolve(JSON.parse(data)); }
+                catch (e) { resolve(null); }
+            });
+        });
+
+        req.on('error', (e) => {
+            console.warn(`⚠️  ML triage server unreachable (${e.message}), using fallback`);
+            resolve(null);
+        });
+
+        req.setTimeout(3000, () => {
+            req.destroy();
+            console.warn('⚠️  ML triage server timeout, using fallback');
+            resolve(null);
+        });
+
+        req.write(body);
+        req.end();
+    });
 }
 
-async function callAI(prompt) {
-    if (!model) return null;
-    try {
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
-        // Try to extract JSON from response
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-            return JSON.parse(jsonMatch[0]);
-        }
-        return text;
-    } catch (e) {
-        console.error('AI call failed:', e.message);
-        return null;
-    }
+function initAI() {
+    console.log('ℹ️  Triage powered by Decision Tree ML server (no Gemini required for triage).');
+    return true;
 }
 
 // Fallback logic when AI is unavailable
@@ -114,21 +130,27 @@ Respond with ONLY a JSON object: {"estimated_minutes": number, "confidence": num
     return { estimated_minutes: mins, confidence: 0.7, reasoning: 'Estimated based on symptom analysis rules' };
 }
 
-async function triagePatient({ symptoms, age, medicalHistory }) {
-    const prompt = `You are an AI triage system. Classify the urgency of this patient visit.
+async function triagePatient({ symptoms, age, medicalHistory, painLevel }) {
+    // ── Try Decision Tree ML server first ────────────────────────────────
+    const mlResult = await callMLServer({
+        symptoms_text: `${symptoms || ''} ${medicalHistory || ''}`.trim(),
+        age:           age   || 30,
+        pain_level:    painLevel || 3
+    });
 
-Symptoms: ${symptoms}
-Age: ${age}
-Medical History: ${medicalHistory || 'None'}
-
-Classify as: emergency, high, medium, or low
-Respond with ONLY a JSON object: {"urgency": "level", "triage_score": number 1-10, "reasoning": "brief explanation"}`;
-
-    const result = await callAI(prompt);
-    if (result && result.urgency) {
-        return result;
+    if (mlResult && mlResult.urgency) {
+        console.log(`🌳 ML Triage → urgency=${mlResult.urgency}, confidence=${mlResult.confidence}`);
+        return {
+            urgency:      mlResult.urgency,
+            triage_score: mlResult.triage_score,
+            reasoning:    mlResult.reasoning,
+            confidence:   mlResult.confidence,
+            source:       'decision_tree_ml'
+        };
     }
 
+    // ── Fallback: keyword-based rules (ML server unavailable) ──────────
+    console.log('🔁 Using keyword-based triage fallback');
     return fallbackTriage(symptoms, age);
 }
 

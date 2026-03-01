@@ -1,0 +1,18 @@
+[
+  "age",
+  "pain_level",
+  "heart_rate",
+  "systolic_bp",
+  "respiratory_rate",
+  "temperature",
+  "chest_pain",
+  "difficulty_breathing",
+  "unconscious",
+  "severe_bleeding",
+  "high_fever",
+  "fracture",
+  "vomiting",
+  "infection",
+  "headache",
+  "routine"
+]
