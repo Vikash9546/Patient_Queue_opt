@@ -63,7 +63,7 @@ export default function ReceptionDashboard() {
             fetchQueue(); loadAppointments(); loadStats();
 
             alert('Successfully added to the queue! 🏥');
-            navigate('/doctor', { state: { doctorId: docId } });
+            navigate('/queue-tv', { state: { doctorId: docId } });
         } catch (e) { alert(e.message); }
     }
 
@@ -78,7 +78,7 @@ export default function ReceptionDashboard() {
             fetchQueue(); loadAppointments(); loadStats();
 
             alert('Emergency successfully added to the queue! 🚨');
-            navigate('/doctor', { state: { doctorId: docId } });
+            navigate('/queue-tv', { state: { doctorId: docId } });
         } catch (e) { alert(e.message); }
     }
 
@@ -92,7 +92,7 @@ export default function ReceptionDashboard() {
             loadAppointments(); loadStats();
 
             alert('Appointment successfully booked and added! 📅');
-            navigate('/doctor', { state: { doctorId: docId } });
+            navigate('/queue-tv', { state: { doctorId: docId } });
         } catch (e) { alert(e.message); }
     }
 

@@ -1,9 +1,15 @@
 import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useQueueContext } from '../context/QueueContext';
 
 export default function QueueTVScreen() {
     const { queue, doctors } = useQueueContext();
     const [currentTime, setCurrentTime] = useState(new Date());
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    const specificDoctorId = location.state?.doctorId || null;
+    const displayDoctors = specificDoctorId ? doctors.filter(d => (d._id || d.id) === specificDoctorId) : doctors;
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -26,17 +32,24 @@ export default function QueueTVScreen() {
                         <p className="text-slate-400 text-sm">Patient Queue Display</p>
                     </div>
                 </div>
-                <div className="text-right">
-                    <p className="text-4xl font-bold text-white font-mono">
-                        {currentTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                    <p className="text-slate-400 text-sm">{currentTime.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                <div className="text-right flex flex-col items-end gap-2">
+                    {specificDoctorId && (
+                        <button onClick={() => navigate('/queue-tv', { replace: true, state: {} })} className="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs font-semibold text-slate-300 transition-colors">
+                            ← Back to Full Clinic View
+                        </button>
+                    )}
+                    <div>
+                        <p className="text-4xl font-bold text-white font-mono">
+                            {currentTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                        <p className="text-slate-400 text-sm">{currentTime.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                    </div>
                 </div>
             </div>
 
             {/* Queue Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {doctors.map(doc => {
+                {displayDoctors.map(doc => {
                     const docQueue = queueByDoctor[doc._id || doc.id] || [];
                     const currentP = docQueue.find(q => q.status === 'in_consultation');
                     const nextP = docQueue.filter(q => q.status === 'waiting').slice(0, 5);
