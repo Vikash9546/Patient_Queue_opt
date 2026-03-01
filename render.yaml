@@ -1,0 +1,32 @@
+services:
+  # Internal Machine Learning Pipeline
+  - type: pserv
+    name: mediqueue-ml
+    env: python
+    rootDir: server/ml
+    buildCommand: pip install -r requirements.txt gunicorn
+    startCommand: gunicorn --bind 0.0.0.0:10000 ml_server:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+
+  # Fullstack Express API + React Client
+  - type: web
+    name: mediqueue-ai
+    env: node
+    rootDir: .
+    buildCommand: npm run build:render
+    startCommand: cd server && npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20.x
+      - key: MONGO_URI
+        sync: false    # ADD THIS IN RENDER DASHBOARD
+      - key: GEMINI_API_KEY
+        sync: false    # ADD THIS IN RENDER DASHBOARD
+      - key: JWT_SECRET
+        sync: false    # ADD THIS IN RENDER DASHBOARD
+      - key: ML_HOST
+        value: "mediqueue-ml"
+      - key: ML_PORT
+        value: "10000"

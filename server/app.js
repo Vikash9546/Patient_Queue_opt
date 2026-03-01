@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
+const path = require('path');
 const { initializeDatabase } = require('./config/database');
 const { createWSServer } = require('./websocket/wsServer');
 const { initAI } = require('./services/aiService');
@@ -40,6 +41,14 @@ app.get('/api/health', (req, res) => {
 
 // Error handler
 app.use(errorHandler);
+
+// Serve Static Frontend (Render Deployment)
+const clientPath = path.join(__dirname, '../client/dist');
+app.use(express.static(clientPath));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(clientPath, 'index.html'));
+});
 
 const PORT = process.env.PORT || 5000;
 
