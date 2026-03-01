@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useQueueContext } from '../context/QueueContext';
 import api from '../services/api';
 import { formatTime } from '../utils/helpers';
@@ -7,7 +7,10 @@ import { formatTime } from '../utils/helpers';
 export default function DoctorDashboard() {
     const { queue, doctors, fetchQueue } = useQueueContext();
     const navigate = useNavigate();
-    const [selectedDoctor, setSelectedDoctor] = useState('');
+    const location = useLocation();
+
+    // Look for preset doctorId in location state or start empty
+    const [selectedDoctor, setSelectedDoctor] = useState(location.state?.doctorId || '');
     const [workload, setWorkload] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [consultTimer, setConsultTimer] = useState(0);
@@ -15,8 +18,8 @@ export default function DoctorDashboard() {
     const timerRef = useRef(null);
 
     useEffect(() => {
-        if (doctors.length > 0 && !selectedDoctor) setSelectedDoctor(doctors[0]._id || doctors[0].id);
-    }, [doctors]);
+        if (doctors.length > 0 && !selectedDoctor) setSelectedDoctor(location.state?.doctorId || doctors[0]._id || doctors[0].id);
+    }, [doctors, location.state]);
 
     useEffect(() => {
         if (selectedDoctor) loadWorkload();

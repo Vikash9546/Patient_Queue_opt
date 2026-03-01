@@ -57,9 +57,13 @@ export default function ReceptionDashboard() {
             const res = await api.addWalkIn(payload);
             setTriageResult(res.data.triage);
             setShowWalkIn(false);
+            const docId = walkInForm.doctor_id;
             setWalkInForm({ patient_name: '', patient_age: '', symptoms: '', doctor_id: '', patient_phone: '', manual_urgency: 'normal', visit_type: 'routine', pain_level: 1 });
             setUrgencyMode('ai');
             fetchQueue(); loadAppointments(); loadStats();
+
+            alert('Successfully added to the queue! 🏥');
+            navigate('/doctor', { state: { doctorId: docId } });
         } catch (e) { alert(e.message); }
     }
 
@@ -68,9 +72,13 @@ export default function ReceptionDashboard() {
         try {
             await api.addEmergency(walkInForm);
             setShowEmergency(false);
+            const docId = walkInForm.doctor_id;
             setWalkInForm({ patient_name: '', patient_age: '', symptoms: '', doctor_id: '', patient_phone: '', manual_urgency: 'normal', visit_type: 'routine', pain_level: 1 });
             setUrgencyMode('ai');
             fetchQueue(); loadAppointments(); loadStats();
+
+            alert('Emergency successfully added to the queue! 🚨');
+            navigate('/doctor', { state: { doctorId: docId } });
         } catch (e) { alert(e.message); }
     }
 
@@ -79,8 +87,12 @@ export default function ReceptionDashboard() {
         try {
             await api.bookAppointment(bookingForm);
             setShowBooking(false);
+            const docId = bookingForm.doctor_id;
             setBookingForm({ patient_name: '', patient_age: '', patient_phone: '', doctor_id: '', symptoms: '', scheduled_time: '', urgency_level: 'low' });
             loadAppointments(); loadStats();
+
+            alert('Appointment successfully booked and added! 📅');
+            navigate('/doctor', { state: { doctorId: docId } });
         } catch (e) { alert(e.message); }
     }
 
