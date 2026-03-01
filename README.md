@@ -13,9 +13,9 @@
 > Minimize patient waiting time. Maximize doctor efficiency. AI-powered queue management for modern clinics.
 
 ### 🔗 Project Links
-- 🌐 **Live Deployment**: [Vercel Deployment Link Here](https://patient-queue-opt.vercel.app/) (Frontend) | [Render Link Here](https://patient-queue-opt.onrender.com) (Backend)
+- 🌐 **Live Deployment**: [Vercel Deployment Link Here](https://patient-queue-opt.vercel.app/reception) (Frontend) | [Render Link Here](https://patient-queue-opt.onrender.com) (Backend)
 - 🎥 **Demo Video**: [Insert Demo Video Link Here](#)
-- 📊 **Presentation (PPT)**: [Insert PPT Link Here](#)
+- 📊 **Presentation (PPT)**: [Google Drive Presentation](https://drive.google.com/file/d/1M_H8rrq9pdzNA1RrilP6Z6Q70srZfFlR/view?usp=sharing)
 
 ---
 
@@ -568,13 +568,6 @@ flowchart TD
 
 ---
 
-## 12. Demo & Video
-
-| Item | Link |
-|------|------|
-| **Live Demo** | Run locally — see Setup below |
-| **Demo Video** | _To be recorded_ |
-| **GitHub Repository** | [github.com/AkaHarshit/mediqueue-ai](https://github.com/AkaHarshit/mediqueue-ai) |
 
 ### Quick Setup for Demo
 ```bash
