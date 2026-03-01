@@ -111,21 +111,6 @@ function fallbackNoShowPrediction(noShowCount, totalVisits, dayOfWeek) {
 }
 
 async function estimateConsultationDuration({ symptoms, age, medicalHistory, doctorSpecialty, urgency }) {
-    const prompt = `You are a medical scheduling AI. Based on the following patient data, estimate the consultation duration in minutes.
-
-Patient Age: ${age}
-Symptoms: ${symptoms}
-Medical History: ${medicalHistory || 'None'}
-Doctor Specialty: ${doctorSpecialty || 'General Medicine'}
-Urgency Level: ${urgency || 'low'}
-
-Respond with ONLY a JSON object: {"estimated_minutes": number, "confidence": number between 0 and 1, "reasoning": "brief explanation"}`;
-
-    const result = await callAI(prompt);
-    if (result && result.estimated_minutes) {
-        return result;
-    }
-
     const mins = fallbackEstimateDuration(symptoms, age, urgency);
     return { estimated_minutes: mins, confidence: 0.7, reasoning: 'Estimated based on symptom analysis rules' };
 }
@@ -134,18 +119,18 @@ async function triagePatient({ symptoms, age, medicalHistory, painLevel }) {
     // ── Try Decision Tree ML server first ────────────────────────────────
     const mlResult = await callMLServer({
         symptoms_text: `${symptoms || ''} ${medicalHistory || ''}`.trim(),
-        age:           age   || 30,
-        pain_level:    painLevel || 3
+        age: age || 30,
+        pain_level: painLevel || 3
     });
 
     if (mlResult && mlResult.urgency) {
         console.log(`🌳 ML Triage → urgency=${mlResult.urgency}, confidence=${mlResult.confidence}`);
         return {
-            urgency:      mlResult.urgency,
+            urgency: mlResult.urgency,
             triage_score: mlResult.triage_score,
-            reasoning:    mlResult.reasoning,
-            confidence:   mlResult.confidence,
-            source:       'decision_tree_ml'
+            reasoning: mlResult.reasoning,
+            confidence: mlResult.confidence,
+            source: 'decision_tree_ml'
         };
     }
 
@@ -155,41 +140,12 @@ async function triagePatient({ symptoms, age, medicalHistory, painLevel }) {
 }
 
 async function predictNoShow({ noShowCount, totalVisits, dayOfWeek, timeOfDay, age }) {
-    const prompt = `Predict the probability (0-1) that this patient will not show up for their appointment.
-
-Previous No-Shows: ${noShowCount || 0}
-Total Past Visits: ${totalVisits || 0}
-Day of Week: ${dayOfWeek}
-Time Slot: ${timeOfDay}
-Patient Age: ${age}
-
-Respond with ONLY a JSON object: {"no_show_probability": number, "risk_level": "low/medium/high", "factors": ["factor1", "factor2"]}`;
-
-    const result = await callAI(prompt);
-    if (result && result.no_show_probability !== undefined) {
-        return result;
-    }
-
     return fallbackNoShowPrediction(noShowCount, totalVisits, dayOfWeek);
 }
 
 async function suggestTimeSlots({ availableSlots, urgency, estimatedDuration, queueLoad }) {
     if (!availableSlots || availableSlots.length === 0) {
         return { recommended_slot: null, reasoning: 'No available slots', alternatives: [] };
-    }
-
-    const prompt = `Suggest the best appointment slot for this patient.
-
-Available Slots: ${JSON.stringify(availableSlots)}
-Patient Urgency: ${urgency}
-Estimated Duration: ${estimatedDuration} minutes
-Current Queue Load: ${queueLoad || 'moderate'}
-
-Respond with ONLY a JSON object: {"recommended_slot": "time string", "reasoning": "brief explanation", "alternatives": ["slot1", "slot2"]}`;
-
-    const result = await callAI(prompt);
-    if (result && result.recommended_slot) {
-        return result;
     }
 
     // Fallback: pick earliest for high urgency, spread out for low
@@ -202,23 +158,6 @@ Respond with ONLY a JSON object: {"recommended_slot": "time string", "reasoning"
 }
 
 async function chatbotResponse(message, context) {
-    const prompt = `You are MediQueue AI, a friendly and helpful clinic receptionist chatbot. Help patients with:
-- Booking appointments
-- Checking wait times
-- General clinic queries
-- Symptom-based guidance
-
-Context: ${context || 'General query'}
-Patient message: ${message}
-
-Be concise, friendly, and professional. If symptoms sound serious, recommend visiting immediately.
-Respond naturally in 2-3 sentences.`;
-
-    const result = await callAI(prompt);
-    if (typeof result === 'string') return { response: result };
-    if (result && result.response) return result;
-
-    // Fallback responses
     const lower = message.toLowerCase();
     if (lower.includes('book') || lower.includes('appointment')) {
         return { response: 'I can help you book an appointment! Please provide your name, age, and symptoms, and I\'ll find the best available slot for you. 📅' };
