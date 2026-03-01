@@ -12,6 +12,11 @@
 
 > Minimize patient waiting time. Maximize doctor efficiency. AI-powered queue management for modern clinics.
 
+### 🔗 Project Links
+- 🌐 **Live Deployment**: [Vercel Deployment Link Here](https://patient-queue-opt.vercel.app/) (Frontend) | [Render Link Here](https://patient-queue-opt.onrender.com) (Backend)
+- 🎥 **Demo Video**: [Insert Demo Video Link Here](#)
+- 📊 **Presentation (PPT)**: [Insert PPT Link Here](#)
+
 ---
 
 ## 1. Problem Statement
