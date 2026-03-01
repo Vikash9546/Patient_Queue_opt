@@ -133,7 +133,7 @@ export default function PatientHistoryPage() {
                                 <p className="text-[12px] font-semibold text-[#1e293b]">{user.username || 'Admin'}</p>
                                 <p className="text-[10px] text-slate-400">Administrator</p>
                             </div>
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#0ea5e9] to-[#6366f1] flex items-center justify-center text-white text-xs font-bold ring-2 ring-white shadow">
+                            <div onClick={() => navigate('/profile')} className="w-8 h-8 rounded-full bg-gradient-to-br from-[#0ea5e9] to-[#6366f1] flex items-center justify-center text-white text-xs font-bold ring-2 ring-white shadow cursor-pointer hover:shadow-md transition-shadow">
                                 {(user.username || 'A').charAt(0).toUpperCase()}
                             </div>
                         </div>

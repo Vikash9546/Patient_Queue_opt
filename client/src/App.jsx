@@ -9,6 +9,7 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import PatientBookingPage from './pages/PatientBookingPage';
 import PatientHistoryPage from './pages/PatientHistoryPage';
 import ActivityDashboard from './pages/ActivityDashboard';
+import ProfilePage from './pages/ProfilePage';
 
 function App() {
     return (
@@ -25,6 +26,7 @@ function App() {
                         <Route path="/book" element={<PatientBookingPage />} />
                         <Route path="/patient-history" element={<PatientHistoryPage />} />
                         <Route path="/activity-logs" element={<ActivityDashboard />} />
+                        <Route path="/profile" element={<ProfilePage />} />
                     </Routes>
                 </BrowserRouter>
             </QueueProvider>
