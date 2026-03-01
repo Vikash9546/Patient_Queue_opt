@@ -20,7 +20,7 @@ export default function LoginPage() {
                 alert('Account created successfully! You can now log in.');
                 setIsRegistering(false);
             } else {
-                const res = await api.login({ username: username || 'reception1', password: password || 'password123' });
+                const res = await api.login({ username, password });
                 localStorage.setItem('mediqueue_token', res.token);
                 localStorage.setItem('mediqueue_user', JSON.stringify(res.user));
                 if (res.user.role === 'doctor') navigate('/doctor');
