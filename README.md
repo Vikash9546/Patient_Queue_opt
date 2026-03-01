@@ -2,6 +2,7 @@
   <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=for-the-badge" />
   <img src="https://img.shields.io/badge/React-18-blue?style=for-the-badge&logo=react" />
   <img src="https://img.shields.io/badge/Node.js-Express-green?style=for-the-badge&logo=node.js" />
+  <img src="https://img.shields.io/badge/Python-ML_Server-3776AB?style=for-the-badge&logo=python" />
   <img src="https://img.shields.io/badge/AI-Gemini-orange?style=for-the-badge&logo=google" />
   <img src="https://img.shields.io/badge/TailwindCSS-3.4-38bdf8?style=for-the-badge&logo=tailwindcss" />
   <img src="https://img.shields.io/badge/MongoDB-Database-47A248?style=for-the-badge&logo=mongodb" />
@@ -96,6 +97,7 @@ Use Google Gemini AI to predict consultation duration & detect potential no-show
 | 8 | **AI Consultation Duration Model** | Gemini-powered consultation time estimation |
 | 9 | **Analytics Dashboard** | Charts for wait times, utilization, peak hours, no-show rates |
 | 10 | **Auto Queue Rebalancer** | Automatic queue rebalancing when delays occur |
+| 11 | **User Profile & Activity Tracking** | Secure authentications, RBAC profile hubs, and global action logging |
 
 #### Bonus Features
 - 📺 **Queue TV Screen** — Animated waiting room display for clinic TVs
@@ -438,6 +440,7 @@ Self-generated using the `DemoSimulator` module (`server/controllers/demoControl
 | GET | `/api/analytics/peak-hours` | Peak hour analysis |
 | GET | `/api/analytics/no-shows` | No-show rate analytics |
 | GET | `/api/analytics/before-after` | Before vs After comparison |
+| GET | `/api/activity` | Paginated User Activity Event Logs |
 
 #### Demo
 | Method | Endpoint | Description |
@@ -473,7 +476,7 @@ Self-generated using the `DemoSimulator` module (`server/controllers/demoControl
 ### Checkpoint 3: Frontend Development
 **Deliverables:**
 - [x] React + Vite project with Tailwind CSS
-- [x] 6 page components (Login, Reception, Doctor, Queue TV, Analytics, Booking)
+- [x] 8 page components (Login, Reception, Doctor, Queue TV, Analytics, Booking, Profile, Activity Logs)
 - [x] Context API state management (Queue + Theme)
 - [x] API service layer with all endpoints
 - [x] WebSocket client with auto-reconnect
@@ -482,9 +485,10 @@ Self-generated using the `DemoSimulator` module (`server/controllers/demoControl
 
 ### Checkpoint 4: AI/Model Integration
 **Deliverables:**
+- [x] Python ML Server Setup (Flask + Scikit-Learn)
 - [x] Google Gemini API integration
+- [x] Local ML Decision Tree for Walk-In Triage Classification
 - [x] Consultation duration estimation prompts
-- [x] Triage classification prompts
 - [x] No-show prediction logic
 - [x] Smart scheduling suggestion prompts
 - [x] AI chatbot for receptionist assistance
@@ -575,7 +579,15 @@ npm install
 node app.js
 # Server runs on http://localhost:5050
 
-# Terminal 2 — Frontend
+# Terminal 2 — ML Server
+cd server/ml
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python ml_server.py
+# ML Server runs on http://localhost:5002
+
+# Terminal 3 — Frontend
 cd client
 npm install
 npm run dev
