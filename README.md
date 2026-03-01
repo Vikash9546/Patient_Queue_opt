@@ -676,9 +676,3 @@ npm run dev
   <b>🏥 MediQueue AI — Because smart clinics don't make patients wait.</b>
 </p>
 
-<p align="center">
-  Built with ❤️ by
-  <a href="https://github.com/Vikash9546">Vikash Kumar</a> · 
-  <a href="https://github.com/AkaHarshit">Harshit Singh</a> · 
-  <a href="https://github.com/omg0014">Om Gupta</a>
-</p>
