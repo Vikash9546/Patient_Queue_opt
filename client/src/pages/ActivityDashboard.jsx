@@ -51,7 +51,7 @@ export default function ActivityDashboard() {
                             <svg className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                             <input placeholder="Search activities..." className="w-48 pl-9 pr-3 py-[7px] bg-slate-100 border border-slate-200 rounded-lg text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 transition-all" />
                         </div>
-                        <button onClick={() => navigate('/login')} className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold shadow-md hover:shadow-lg transition-all">
+                        <button onClick={() => navigate('/profile')} className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold shadow-md hover:shadow-lg transition-all">
                             A
                         </button>
                     </div>
@@ -105,9 +105,9 @@ export default function ActivityDashboard() {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold uppercase ${act.method === 'POST' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
-                                                        act.method === 'PUT' || act.method === 'PATCH' ? 'bg-amber-50 text-amber-600 border border-amber-200' :
-                                                            act.method === 'DELETE' ? 'bg-red-50 text-red-600 border border-red-200' :
-                                                                'bg-blue-50 text-blue-600 border border-blue-200'
+                                                    act.method === 'PUT' || act.method === 'PATCH' ? 'bg-amber-50 text-amber-600 border border-amber-200' :
+                                                        act.method === 'DELETE' ? 'bg-red-50 text-red-600 border border-red-200' :
+                                                            'bg-blue-50 text-blue-600 border border-blue-200'
                                                     }`}>
                                                     {act.method}
                                                 </span>
