@@ -14,7 +14,7 @@
 
 ### 🔗 Project Links
 - 🌐 **Live Deployment**: (https://patient-queue-opt.vercel.app/reception)
-- 🎥 **Demo Video**: [Insert Demo Video Link Here](#)
+- 🎥 **Demo Video**: https://drive.google.com/file/d/1Z-J7fmgn7KYj6jtVXcUXXE3UFjDV-6Se/view?usp=drive_link
 - 📊 **Presentation (PPT)**: (https://drive.google.com/file/d/1M_H8rrq9pdzNA1RrilP6Z6Q70srZfFlR/view?usp=sharing)
 
 ---
