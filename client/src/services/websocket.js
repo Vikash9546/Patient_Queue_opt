@@ -30,7 +30,7 @@ class WebSocketService {
         this.shouldReconnect = true;
 
         try {
-            const wsUrl = `ws://${window.location.hostname}:5050`;
+            const wsUrl = import.meta.env.VITE_WS_URL || `ws://${window.location.hostname}:5050`;
             this.ws = new WebSocket(wsUrl);
         } catch (e) {
             this.scheduleReconnect();
